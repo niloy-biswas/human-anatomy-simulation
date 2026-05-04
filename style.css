@@ -1,0 +1,797 @@
+/* ═══════════════════════════════════════════════════════════════
+   মানব হৃদপিণ্ড · 10 Minute School Design System
+   Source: DESIGN.md / tokens.css
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── 10MS Design Tokens (from tokens.css) ───────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Anek+Bangla:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Colors */
+  --c-primary:            #1CAB55;
+  --c-primary-deep:       #17994B;
+  --c-primary-container:  #D0FAD0;
+  --c-on-primary:         #FFFFFF;
+  --c-on-primary-container: #086347;
+  --c-green-link:         #149353;
+  --c-green-cta:          #37C25C;
+  --c-brand-red:          #E8001D; /* marketing/landing ONLY */
+  --c-error:              #DC2626;
+  --c-header-dark:        #050B14; /* viewer bg + mobile header */
+  --c-surface:            #FFFFFF;
+  --c-surface-subtle:     #F3F4F6;
+  --c-surface-tinted:     #EAFEF2;
+  --c-inverse:            #111827;
+  --c-text:               #111827;
+  --c-text-2:             #374151;
+  --c-text-3:             #6B7280;
+  --c-text-dis:           #D1D5DB;
+  --c-icon-off:           #CDD1D7;
+  --c-outline:            #E5E7EB;
+  --c-outline-v:          #D1D5DB;
+
+  /* Fonts — Two-Font Rule: Inter (English) + Anek Bangla (Bengali) */
+  --f-en: 'Inter', sans-serif;
+  --f-bn: 'Anek Bangla', sans-serif;
+
+  /* Radius */
+  --r-sm:   4px;
+  --r-md:   8px;
+  --r-lg:   10px;
+  --r-xl:   12px;
+  --r-2xl:  16px;
+  --r-full: 999px;
+
+  /* Spacing */
+  --s-xs:  6px;
+  --s-sm:  8px;
+  --s-md:  12px;
+  --s-lg:  16px;
+  --s-xl:  24px;
+  --s-2xl: 32px;
+
+  /* Shadows — Flat-by-Default Rule */
+  --sh-card:  0 1px 3px rgba(0,0,0,0.08);   /* nav bar only */
+  --sh-hover: 0 4px 16px rgba(0,0,0,0.10);  /* card hover */
+  --sh-modal: 0 8px 40px rgba(0,0,0,0.14);
+
+  /* Layout */
+  --nav-h-desktop: 64px;
+  --nav-h-mobile:  56px;
+}
+
+/* ─── Reset ──────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  /* Default Bengali per 10MS spec; English blocks switch to --f-en */
+  font-family: var(--f-bn);
+  background: var(--c-header-dark); /* viewer bg bleeds to body */
+  color: var(--c-text);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* ─── Desktop Navigation (≥768px) ───────────────────────────────
+   10MS Rule: surface #FFFFFF, 64px, outline bottom border, sh-card shadow
+   Black+Red full lockup logo, active tab: green-link text + 2px primary border
+   ─────────────────────────────────────────────────────────────── */
+.nav-desktop {
+  display: none; /* hidden on mobile */
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  background: var(--c-surface);
+  border-bottom: 1px solid var(--c-outline);
+  box-shadow: var(--sh-card);
+  height: var(--nav-h-desktop);
+}
+
+.nav-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 40px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  flex-shrink: 0;
+  line-height: 0;
+}
+
+/* Page title block (replaces nav tabs + actions) */
+.nav-page-title {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+}
+
+.nav-title-bn {
+  font-family: var(--f-bn);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--c-text);
+  line-height: 1.3;
+}
+
+.nav-title-en {
+  font-family: var(--f-en);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--c-text-3);
+  letter-spacing: 0.02em;
+}
+
+/* ─── Mobile Header (<768px) ─────────────────────────────────────
+   10MS Rule: header-dark #050B14, White+Red icon mark, 56px height
+   ─────────────────────────────────────────────────────────────── */
+.header-mobile {
+  display: flex; /* visible on mobile */
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  background: var(--c-header-dark);
+  height: var(--nav-h-mobile);
+}
+
+.header-mobile-inner {
+  width: 100%;
+  padding: 0 20px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-mobile-logo {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  flex-shrink: 0;
+  line-height: 0;
+}
+
+.header-mobile-title {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+}
+
+.header-mobile-name {
+  font-family: var(--f-bn);
+  font-size: 15px;
+  font-weight: 600;
+  color: #FFFFFF;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+.header-mobile-sub {
+  font-family: var(--f-en);
+  font-size: 11px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.45);
+  letter-spacing: 0.02em;
+}
+
+/* ─── Main Viewer Section ────────────────────────────────────── */
+.viewer-section {
+  position: relative;
+  width: 100%;
+  height: calc(100dvh - var(--nav-h-mobile));
+  overflow: hidden;
+  background: var(--c-header-dark);
+}
+
+model-viewer {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  --poster-color: transparent;
+  display: block;
+  outline: none;
+}
+
+/* Subtle vignette for depth within the viewer */
+.viewer-section::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 85% 85% at 50% 50%,
+    transparent 55%, rgba(5, 11, 20, 0.4) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Hide model-viewer's default progress bar — we use our own overlay */
+model-viewer::part(default-progress-bar) { display: none; }
+
+/* ─── Loading Overlay ────────────────────────────────────────── */
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  background: var(--c-header-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.5s ease;
+}
+
+.loading-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.loading-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  animation: fadeUp 0.5s ease both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.ecg-wrap {
+  width: 100px;
+  height: 40px;
+}
+
+.ecg-wrap svg { width: 100%; height: 100%; }
+
+.ecg-line {
+  stroke-dasharray: 220;
+  stroke-dashoffset: 220;
+  animation: ecgDraw 1.8s ease-in-out infinite;
+}
+
+@keyframes ecgDraw {
+  0%   { stroke-dashoffset: 220; opacity: 1; }
+  75%  { stroke-dashoffset: 0;   opacity: 1; }
+  100% { stroke-dashoffset: 0;   opacity: 0; }
+}
+
+.loading-label {
+  font-family: var(--f-bn);
+  font-size: 15px;
+  font-weight: 500;
+  color: #FFFFFF;
+}
+
+.loading-sub {
+  font-family: var(--f-en);
+  font-size: 12px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.03em;
+}
+
+/* ─── Hotspot Dots ────────────────────────────────────────────
+   10MS Rule: primary #1CAB55 for active/interactive states
+   ─────────────────────────────────────────────────────────── */
+.hotspot {
+  -webkit-appearance: none;
+  appearance: none;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--c-primary);            /* 10MS green #1CAB55 */
+  border: 2.5px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 0 3px rgba(28, 171, 85, 0.35);
+  position: relative;
+  z-index: 10;
+  transition: transform 0.18s ease-out, box-shadow 0.18s;
+  animation: dotPulse 2.8s ease-out infinite;
+}
+
+@keyframes dotPulse {
+  0%, 65% { box-shadow: 0 0 0 3px rgba(28, 171, 85, 0.35); }
+  35%      { box-shadow: 0 0 0 8px rgba(28, 171, 85, 0.08); }
+}
+
+.hotspot:hover,
+.hotspot:focus-visible {
+  transform: scale(1.4);
+  box-shadow: 0 0 0 5px rgba(28, 171, 85, 0.25);
+  outline: none;
+}
+
+.hotspot:hover { background: var(--c-primary-deep); }
+
+/* ─── Annotation Pills ────────────────────────────────────────
+   10MS Card Rule: surface white, 1px outline border, resting sh-card shadow
+   Hover: sh-hover + translateY(-2px), 0.2s ease-out
+   ─────────────────────────────────────────────────────────── */
+.annotation-pill {
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+
+  /* 10MS card style */
+  background: var(--c-surface);
+  border: 1px solid var(--c-outline);
+  border-radius: var(--r-xl);            /* 12px — small card */
+  box-shadow: var(--sh-card);
+  padding: 7px 12px 7px 10px;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  pointer-events: none;
+  white-space: nowrap;
+  max-width: 210px;
+  transition: box-shadow 0.2s ease-out, transform 0.2s ease-out;
+}
+
+/* Green dot accent (10MS primary) */
+.annotation-pill::before {
+  content: '';
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--c-primary);
+  flex-shrink: 0;
+  align-self: center;
+}
+
+/* Labels column */
+.pill-labels {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+/* Bengali label — Anek Bangla per Two-Font Rule */
+.pill-label-bn {
+  display: block;
+  font-family: var(--f-bn);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--c-text);
+}
+
+/* English label — Inter per Two-Font Rule */
+.pill-label-en {
+  display: block;
+  font-family: var(--f-en);
+  font-size: 10.5px;
+  font-weight: 400;
+  line-height: 1.3;
+  color: var(--c-text-3);
+  letter-spacing: 0.01em;
+}
+
+/* Left-side pills */
+.hotspot.left .annotation-pill {
+  left: auto;
+  right: 20px;
+}
+
+/* Hover lift on the parent hotspot */
+.hotspot:hover .annotation-pill {
+  box-shadow: var(--sh-hover);
+  transform: translateY(calc(-50% - 2px));
+}
+
+.hotspot.left:hover .annotation-pill {
+  transform: translateY(calc(-50% - 2px));
+}
+
+/* ─── Connector stub (dot → pill) ─────────────────────────── */
+.pill-connector {
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  width: 6px;
+  height: 1.5px;
+  background: linear-gradient(to right, rgba(28,171,85,0.6), rgba(229,231,235,0.8));
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.hotspot.left .pill-connector {
+  left: auto;
+  right: 14px;
+  background: linear-gradient(to left, rgba(28,171,85,0.6), rgba(229,231,235,0.8));
+}
+
+/* ─── Interaction Hint ───────────────────────────────────────── */
+.interaction-hint {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  z-index: 10;
+
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  font-family: var(--f-bn);
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.35);
+  pointer-events: none;
+  user-select: none;
+
+  animation: fadeUp 0.6s ease 2s both;
+  transition: opacity 1s ease;
+}
+
+.interaction-hint.fade-out { opacity: 0; }
+
+/* ─── Active Hotspot State ───────────────────────────────────
+   Applied when user clicks a hotspot
+   ─────────────────────────────────────────────────────────── */
+.hotspot--active {
+  background: var(--c-primary-deep);
+  border-color: #ffffff;
+  box-shadow:
+    0 0 0 4px rgba(28, 171, 85, 0.30),
+    0 0 0 7px rgba(28, 171, 85, 0.10);
+  transform: scale(1.35);
+  animation: none;
+}
+
+.hotspot--active .annotation-pill {
+  border-color: var(--c-primary);
+  box-shadow: var(--sh-card), 0 0 0 2px rgba(28, 171, 85, 0.2);
+}
+
+/* ─── Detail Panel ───────────────────────────────────────────
+   Desktop: fixed right card  |  Mobile: bottom sheet
+   10MS Card: surface white, outline border, sh-modal shadow
+   ─────────────────────────────────────────────────────────── */
+.detail-panel {
+  position: fixed;
+  z-index: 400;
+  background: var(--c-surface);
+  border: 1px solid var(--c-outline);
+  box-shadow: var(--sh-modal);
+
+  /* Desktop: right floating card */
+  top: 50%;
+  right: 24px;
+  transform: translateY(-50%) translateX(24px);
+  width: 340px;
+  border-radius: var(--r-2xl);
+  opacity: 0;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: none;
+  max-height: calc(100dvh - 120px);
+  overflow-y: auto;
+}
+
+.detail-panel.is-open {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+  pointer-events: auto;
+}
+
+/* Mobile: bottom sheet */
+@media (max-width: 767px) {
+  .detail-panel {
+    top: auto;
+    right: 0;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    border-radius: 20px 20px 0 0;
+    border-bottom: none;
+    transform: translateY(100%);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    max-height: 70dvh;
+  }
+  .detail-panel.is-open {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Mobile backdrop */
+.detail-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 390;
+  background: rgba(5, 11, 20, 0.5);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+.detail-backdrop.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+@media (min-width: 768px) {
+  .detail-backdrop { display: none; }
+}
+
+/* Panel header */
+.detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 20px 0;
+}
+
+.detail-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.detail-title-bn {
+  font-family: var(--f-bn);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--c-text);
+  word-break: break-word;
+}
+
+.detail-title-en {
+  font-family: var(--f-en);
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--c-text-3);
+  letter-spacing: 0.01em;
+}
+
+.detail-close {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: var(--r-full);
+  background: var(--c-surface-subtle);
+  border: 1px solid var(--c-outline);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--c-text-3);
+  transition: background 0.15s, color 0.15s;
+  margin-top: 2px;
+}
+.detail-close:hover {
+  background: var(--c-outline);
+  color: var(--c-text);
+}
+
+/* Green accent divider */
+.detail-divider {
+  height: 2px;
+  background: var(--c-primary);
+  margin: 16px 20px 0;
+  border-radius: 2px;
+  opacity: 0.7;
+}
+
+/* Panel body */
+.detail-body {
+  padding: 16px 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.detail-text-bn {
+  font-family: var(--f-bn);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.85;
+  color: var(--c-text-2);
+  word-break: break-word;
+}
+
+.detail-text-en {
+  font-family: var(--f-en);
+  font-size: 12.5px;
+  font-weight: 400;
+  line-height: 1.7;
+  color: var(--c-text-3);
+  padding-top: 10px;
+  border-top: 1px solid var(--c-outline);
+}
+
+/* ─── Debug Panel ────────────────────────────────────────────
+   10MS Card: white surface, outline border, resting shadow
+   ─────────────────────────────────────────────────────────── */
+.debug-panel {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 300;
+}
+
+.debug-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-outline);
+  border-radius: var(--r-full);
+  box-shadow: var(--sh-card);
+  font-family: var(--f-bn);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--c-text-2);
+  cursor: pointer;
+  transition: box-shadow 0.18s, color 0.15s;
+}
+
+.debug-toggle:hover {
+  box-shadow: var(--sh-hover);
+  color: var(--c-text);
+}
+
+.debug-toggle[aria-expanded="true"] {
+  border-color: var(--c-primary);
+  color: var(--c-green-link);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-bottom-color: transparent;
+  box-shadow: none;
+}
+
+/* 10MS card: bg surface, outline border, sh-modal elevation when floating */
+.debug-content {
+  background: var(--c-surface);
+  border: 1px solid var(--c-outline);
+  border-top: none;
+  border-top-left-radius: var(--r-xl);
+  border-bottom-left-radius: var(--r-xl);
+  border-bottom-right-radius: var(--r-xl);
+  padding: var(--s-lg);
+  min-width: 230px;
+  box-shadow: var(--sh-modal);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: panelIn 0.2s ease both;
+}
+
+.debug-content[hidden] { display: none; }
+
+@keyframes panelIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.debug-actions {
+  display: flex;
+  gap: var(--s-sm);
+}
+
+/* 10MS button: pill radius, primary and ghost variants */
+.debug-btn {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: var(--r-full);
+  font-family: var(--f-bn);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.18s ease-out, box-shadow 0.18s;
+  border: none;
+}
+
+.debug-btn--primary {
+  background: var(--c-primary);
+  color: var(--c-on-primary);
+}
+
+.debug-btn--primary:hover {
+  background: var(--c-primary-deep);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+}
+
+.debug-btn--ghost {
+  background: transparent;
+  color: var(--c-text-2);
+  border: 1px solid var(--c-outline);
+}
+
+.debug-btn--ghost:hover {
+  border-color: var(--c-outline-v);
+  color: var(--c-text);
+}
+
+/* ─── Attribution Footer ─────────────────────────────────────
+   10MS Body/Small, green-link for URLs
+   ─────────────────────────────────────────────────────────── */
+.attribution {
+  position: fixed;
+  bottom: 20px;
+  left: 24px;
+  z-index: 50;
+  pointer-events: none;
+  max-width: 360px;
+}
+
+.attribution p {
+  font-family: var(--f-bn);
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.22);
+}
+
+/* 10MS green-link (#149353) for text links */
+.attribution a {
+  color: rgba(20, 147, 83, 0.5);
+  text-decoration: none;
+  pointer-events: auto;
+  transition: color 0.15s;
+}
+
+.attribution a:hover {
+  color: var(--c-green-link);
+}
+
+/* ─── Responsive ─────────────────────────────────────────────── */
+@media (min-width: 768px) {
+  .nav-desktop  { display: block; }
+  .header-mobile { display: none; }
+
+  .viewer-section {
+    height: calc(100dvh - var(--nav-h-desktop));
+  }
+}
+
+@media (max-width: 480px) {
+  .annotation-pill {
+    padding: 5px 9px 5px 8px;
+    max-width: 160px;
+  }
+
+  .pill-label-bn { font-size: 12px; }
+  .pill-label-en { font-size: 9.5px; }
+
+  .viewer-info-chip { bottom: 16px; left: 16px; }
+  .interaction-hint { display: none; }
+
+  .attribution { max-width: calc(100vw - 110px); }
+  .debug-panel  { bottom: 16px; right: 16px; }
+}
+
+/* ─── Accessibility ──────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

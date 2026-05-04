@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Extract Sketchfab Annotation Points</title>
+  <script src="https://static.sketchfab.com/api/sketchfab-viewer-1.12.1.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 24px;
+      background: #f5f5f5;
+    }
+
+    iframe {
+      width: 1px;
+      height: 1px;
+      opacity: 0.01;
+      position: absolute;
+      left: -9999px;
+      top: -9999px;
+    }
+
+    pre {
+      background: #111827;
+      color: #e5e7eb;
+      padding: 16px;
+      border-radius: 8px;
+      overflow: auto;
+      max-height: 500px;
+    }
+
+    button {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 8px;
+      background: #2563eb;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Sketchfab Annotation Extractor</h1>
+  <p>This page only loads Sketchfab temporarily to extract annotation points.</p>
+
+  <button onclick="copyConverted()">Copy converted annotations</button>
+
+  <h2>Converted annotations</h2>
+  <pre id="converted-output">Loading...</pre>
+
+  <h2>Raw annotations</h2>
+  <pre id="raw-output">Loading...</pre>
+
+  <iframe id="api-frame"></iframe>
+
+  <script>
+    const MODEL_UID = "10e9a26f7e004a09bb357d30e4e35f29";
+
+    const iframe = document.getElementById("api-frame");
+    const client = new Sketchfab(iframe);
+
+    let convertedAnnotationsText = "";
+
+    client.init(MODEL_UID, {
+      success: function(api) {
+        api.start();
+
+        api.addEventListener("viewerready", function() {
+          console.log("Sketchfab viewer ready");
+
+          api.getAnnotationList(function(err, annotations) {
+            if (err) {
+              console.error("Failed to get annotations:", err);
+              document.getElementById("raw-output").textContent = String(err);
+              return;
+            }
+
+            console.log("RAW_SKETCHFAB_ANNOTATIONS");
+            console.log(annotations);
+
+            document.getElementById("raw-output").textContent =
+              JSON.stringify(annotations, null, 2);
+
+            const converted = annotations.map((annotation, index) => {
+              /*
+                Inspect the raw output first.
+
+                Sketchfab annotation objects may include fields such as:
+                - name/title
+                - content/description
+                - position
+                - eye
+                - target
+
+                The exact structure can vary.
+              */
+
+              const position =
+                annotation.position ||
+                annotation.worldPosition ||
+                annotation.target ||
+                [0, 0, 0];
+
+              const positionString = Array.isArray(position)
+                ? `${position[0]} ${position[1]} ${position[2]}`
+                : String(position);
+
+              return {
+                id: annotation.uid || `annotation-${index + 1}`,
+                originalTitle:
+                  annotation.name ||
+                  annotation.title ||
+                  `Annotation ${index + 1}`,
+
+                // Replace these Bangla labels manually after checking which number means which part.
+                label: `লেবেল ${index + 1}`,
+
+                position: positionString,
+
+                // For <model-viewer>, you may need to manually adjust this.
+                normal: "0 1 0",
+
+                // Optional UI placement hint.
+                side: index % 2 === 0 ? "right" : "left",
+
+                // Keep camera data for reference if available.
+                eye: annotation.eye || null,
+                target: annotation.target || null,
+
+                description:
+                  annotation.content ||
+                  annotation.description ||
+                  ""
+              };
+            });
+
+            convertedAnnotationsText =
+              "const annotations = " +
+              JSON.stringify(converted, null, 2) +
+              ";";
+
+            console.log("CONVERTED_MODEL_VIEWER_ANNOTATIONS");
+            console.log(convertedAnnotationsText);
+
+            document.getElementById("converted-output").textContent =
+              convertedAnnotationsText;
+          });
+        });
+      },
+
+      error: function() {
+        console.error("Sketchfab viewer failed to load");
+        document.getElementById("raw-output").textContent =
+          "Sketchfab viewer failed to load.";
+      }
+    });
+
+    function copyConverted() {
+      navigator.clipboard.writeText(convertedAnnotationsText);
+      alert("Converted annotations copied!");
+    }
+  </script>
+</body>
+</html>

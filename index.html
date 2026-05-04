@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>মানব হৃদপিণ্ড — ৩ডি অ্যানাটমি · 10 Minute School</title>
+
+  <!-- 10MS Design System fonts: Inter (English) + Anek Bangla (Bengali) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Anek+Bangla:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Google model-viewer web component -->
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════
+       DESKTOP NAV (≥768px) — white surface, full lockup logo
+       10MS Rule: surface #FFFFFF, 64px, outline bottom border, sh-card shadow
+       ═══════════════════════════════════════════════ -->
+  <nav class="nav-desktop" role="navigation" aria-label="প্রধান নেভিগেশন">
+    <div class="nav-inner">
+
+      <!-- Black+Red full lockup logo — desktop only -->
+      <a href="#" class="nav-logo" aria-label="10 Minute School হোম">
+        <svg width="109" height="30" viewBox="0 0 579 160" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <g clip-path="url(#logo-color-clip)">
+            <path d="M126.086 93.3062L172.171 47.2135C167.132 22.6049 147.563 3.28767 122.768 0.185629C122.301 0.12626 121.826 0.0743121 121.358 0.0297852V22.8795C132.097 24.6977 141.002 31.6439 146.197 41.2023L110.101 77.2914L126.086 93.3062Z" fill="#EB2026"/>
+            <path d="M43.1614 160H20.4972V22.6642H0V0H43.1614V160Z" fill="#111827"/>
+            <path d="M150.649 84.7939L150.553 99.8589V99.9331C150.553 120.542 134.865 137.306 115.584 137.306C96.3043 137.306 80.6308 120.556 80.616 99.9702L80.8906 59.8589V59.7846C80.8906 41.4693 93.3284 25.8997 110.063 22.9238V0.0518176L108.579 0.222504C79.8516 3.99245 58.2115 29.5806 58.1893 59.7475L57.9295 99.8589V99.9331C57.9295 133.039 83.7848 159.97 115.562 159.97C147.34 159.97 173.173 133.061 173.187 99.9702L173.44 61.9813L150.649 84.7939Z" fill="#111827"/>
+            <path d="M260.186 0.103998V72.4751H250.249V22.6717L227.778 72.5789L206.041 22.6717V72.4751H196.097V0.103998H208.008L227.778 47.1096L248.386 0.103998H260.186Z" fill="#111827"/>
+            <path d="M294.509 0.103998H284.468V72.6754H294.509V0.103998Z" fill="#111827"/>
+            <path d="M372.163 0.103998V72.5789H360.772L328.987 17.8109V72.5789H319.258V0.103998H330.753L362.635 56.2153V0.103998H372.163Z" fill="#111827"/>
+            <path d="M446.449 0V47.1095C446.322 52.638 444.433 57.9815 441.058 62.3622C437.683 66.7428 432.998 69.932 427.684 71.4654C422.371 72.9988 416.707 72.7965 411.517 70.8878C406.327 68.9791 401.881 65.4638 398.828 60.8534C396.181 56.7388 394.713 51.9776 394.583 47.0872V0H404.52V46.59C404.52 50.8216 406.201 54.88 409.193 57.8722C412.185 60.8644 416.243 62.5454 420.475 62.5454C424.707 62.5454 428.765 60.8644 431.757 57.8722C434.75 54.88 436.431 50.8216 436.431 46.59V0H446.449Z" fill="#111827"/>
+            <path d="M519.904 0V9.62523L495.57 9.52876L495.777 72.6753H485.529L485.633 9.52876H461.722V0H519.904Z" fill="#111827"/>
+            <path d="M578.85 62.9463V72.5715H534.887V0.103998H578.85V9.83313H544.831V32.0966H570.813V41.7218H544.831V62.9463H578.85Z" fill="#111827"/>
+            <path d="M217.826 159.466C208.824 159.466 200.549 155.228 196.097 149.121V148.913L200.238 141.878C203.444 146.538 209.648 150.16 217.93 150.672H220.616C227.755 150.672 233.655 145.395 233.655 138.263C233.655 131.132 228.067 128.223 220.616 127.087C219.009 126.758 217.387 126.511 215.755 126.345C205.514 124.386 196.304 118.382 196.304 107.518C196.304 96.6531 205.099 87.5696 215.755 87.5696H217.306C224.445 87.5696 232.097 90.6716 235.926 95.5324L231.273 104.119C227.236 99.666 223.414 97.1874 217.306 96.8757H215.755C210.271 96.8757 205.722 101.848 205.722 107.532C205.722 113.017 209.551 116.015 215.755 116.846C218.345 117.158 220.097 117.262 220.824 117.365C233.136 119.02 242.449 126.056 242.449 138.263C242.449 150.471 232.616 159.154 220.616 159.466H217.826Z" fill="#111827"/>
+            <path d="M305.9 153.054C299.838 157.382 292.57 159.698 285.121 159.673C275.518 159.673 266.308 155.859 259.518 149.068C252.728 142.278 248.913 133.069 248.913 123.466C248.913 113.863 252.728 104.653 259.518 97.8629C266.308 91.0726 275.518 87.2579 285.121 87.2579C292.558 87.2014 299.826 89.4804 305.9 93.7736L301.351 103.295C296.775 99.5559 291.014 97.5742 285.106 97.7068C280.971 97.727 276.902 98.7401 273.24 100.661C269.579 102.582 266.432 105.355 264.066 108.745C261.699 112.136 260.182 116.046 259.642 120.145C259.102 124.245 259.554 128.414 260.962 132.302C262.369 136.19 264.69 139.683 267.729 142.487C270.767 145.291 274.436 147.324 278.424 148.414C282.412 149.505 286.605 149.621 290.647 148.753C294.69 147.886 298.465 146.06 301.655 143.429L305.9 153.054Z" fill="#111827"/>
+            <path d="M369.64 87.2579V159.57H359.607V129.366H326.605V159.57H316.572V87.2579H326.605V120.26H359.607V87.2579H369.64Z" fill="#111827"/>
+            <path d="M450.086 123.258C450.086 143.228 434.88 159.555 414.842 159.555C395.807 159.555 380.497 143.228 380.497 123.243C380.497 103.384 395.807 87.1391 414.842 87.1391C434.88 87.1391 450.115 103.384 450.115 123.243L450.086 123.258ZM440.186 123.243C440.186 108.868 429.321 97.1725 414.842 97.1725C401.284 97.1725 390.427 108.868 390.427 123.243C390.427 137.833 401.284 149.625 414.842 149.625C429.321 149.625 440.186 137.833 440.186 123.243Z" fill="#111827"/>
+            <path d="M527.763 123.258C527.763 143.228 512.557 159.57 492.49 159.57C473.447 159.57 458.138 143.243 458.138 123.258C458.138 103.399 473.447 87.1539 492.49 87.1539C512.527 87.1539 527.763 103.399 527.763 123.258ZM517.833 123.258C517.833 108.883 506.969 97.1873 492.49 97.1873C478.932 97.1873 468.067 108.883 468.067 123.258C468.067 137.848 478.932 149.64 492.49 149.64C506.969 149.64 517.833 137.848 517.833 123.258Z" fill="#111827"/>
+            <path d="M548.438 149.848H578.85V159.674H538.605V87.2579H548.438V149.848Z" fill="#111827"/>
+          </g>
+          <defs>
+            <clipPath id="logo-color-clip"><rect width="578.85" height="160" fill="white"/></clipPath>
+          </defs>
+        </svg>
+      </a>
+
+      <!-- Page title -->
+      <div class="nav-page-title">
+        <span class="nav-title-bn">মানব হৃদপিণ্ড</span>
+        <span class="nav-title-en">Interactive 3D Anatomy Model</span>
+      </div>
+
+    </div>
+  </nav>
+
+  <!-- ═══════════════════════════════════════════════
+       MOBILE HEADER (<768px) — header-dark, icon logo
+       10MS Rule: #050B14 bg, White+Red icon mark, 56px
+       ═══════════════════════════════════════════════ -->
+  <header class="header-mobile" role="banner">
+    <div class="header-mobile-inner">
+      <!-- White+Red icon logo — mobile only -->
+      <a href="#" class="header-mobile-logo" aria-label="10 Minute School হোম">
+        <svg width="32" height="32" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M109.506 89.9736L144.049 55.4252C140.272 36.9801 125.604 22.501 107.02 20.1759C106.669 20.1314 106.313 20.0925 105.963 20.0591V37.1859C114.012 38.5487 120.686 43.7552 124.58 50.9196L97.5244 77.9698L109.506 89.9736Z" fill="#EB2026"/>
+          <path d="M47.3513 139.963H30.3635V37.0244H15V20.0366H47.3513V139.963Z" fill="#F9FAFB"/>
+          <path d="M127.917 83.5935L127.845 94.8853V94.9409C127.845 110.388 116.086 122.953 101.635 122.953C87.1834 122.953 75.4355 110.399 75.4244 94.9688L75.6302 64.9037V64.848C75.6302 51.1199 84.9529 39.4499 97.4962 37.2193V20.0758L96.3837 20.2037C74.8514 23.0295 58.6313 42.2088 58.6146 64.8202L58.4199 94.8853V94.9409C58.4199 119.755 77.7995 139.941 101.618 139.941C125.436 139.941 144.799 119.772 144.81 94.9688L145 66.4945L127.917 83.5935Z" fill="#F9FAFB"/>
+        </svg>
+      </a>
+
+      <!-- Page title on mobile header -->
+      <div class="header-mobile-title">
+        <span class="header-mobile-name">মানব হৃদপিণ্ড</span>
+        <span class="header-mobile-sub">Interactive 3D Anatomy</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════
+       MAIN 3D VIEWER SECTION
+       ═══════════════════════════════════════════════ -->
+  <main class="viewer-section" id="viewerSection">
+
+    <!-- Loading overlay -->
+    <div class="loading-overlay" id="loadingOverlay" role="status" aria-live="polite">
+      <div class="loading-card">
+        <!-- ECG animation -->
+        <div class="ecg-wrap" aria-hidden="true">
+          <svg viewBox="0 0 80 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <polyline class="ecg-line"
+              points="0,15 10,15 14,4 18,26 22,8 26,22 30,15 80,15"
+              stroke="#1CAB55" stroke-width="2"
+              stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+          </svg>
+        </div>
+        <p class="loading-label">মডেল লোড হচ্ছে…</p>
+        <p class="loading-sub">Loading 3D heart model</p>
+      </div>
+    </div>
+
+    <!--
+      model-viewer attributes:
+        camera-controls  – mouse/touch orbit + zoom
+        autoplay         – plays first GLB animation
+        exposure         – light intensity
+        tone-mapping     – commerce for accurate PBR colour
+    -->
+    <model-viewer
+      id="heartViewer"
+      src="./assets/heart.glb"
+      camera-controls
+      autoplay
+      animation-crossfade-duration="800"
+      shadow-intensity="1"
+      shadow-softness="0.8"
+      exposure="0.9"
+      tone-mapping="commerce"
+      camera-orbit="0deg 80deg auto"
+      camera-target="auto auto auto"
+      min-camera-orbit="auto 30deg 60%"
+      max-camera-orbit="auto 150deg 250%"
+      alt="মানব হৃদপিণ্ডের ইন্টারঅ্যাক্টিভ ৩ডি মডেল"
+      loading="eager"
+    >
+      <!--
+        Hotspot slots injected by script.js from the annotations array.
+        Each <button slot="hotspot-{id}" data-position="X Y Z" data-normal="NX NY NZ">
+      -->
+    </model-viewer>
+
+    <!-- Interaction hint -->
+    <div class="interaction-hint" id="interactionHint" aria-hidden="true">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M7 1.5C7 1.5 9.5 3 9.5 5.5C9.5 7 8.5 8 7 8.5M7 1.5C7 1.5 4.5 3 4.5 5.5C4.5 7 5.5 8 7 8.5M7 1.5V8.5M7 8.5V12.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+      টেনে ঘোরান · স্ক্রোল করে জুম করুন
+    </div>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════════════
+       DETAIL PANEL — shown on hotspot click
+       Desktop: right floating card  |  Mobile: bottom sheet
+       ═══════════════════════════════════════════════ -->
+
+  <!-- Mobile backdrop (tap to close) -->
+  <div class="detail-backdrop" id="detailBackdrop" hidden aria-hidden="true"></div>
+
+  <aside class="detail-panel" id="detailPanel"
+         role="dialog" aria-modal="true"
+         aria-labelledby="detailTitleBn"
+         aria-hidden="true" hidden>
+
+    <!-- Header row -->
+    <div class="detail-header">
+      <div class="detail-titles">
+        <h2 class="detail-title-bn" id="detailTitleBn">—</h2>
+        <p  class="detail-title-en" id="detailTitleEn">—</p>
+      </div>
+      <button class="detail-close" id="detailClose" aria-label="বন্ধ করুন">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.8"
+                stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Green divider -->
+    <div class="detail-divider" aria-hidden="true"></div>
+
+    <!-- Explanation body -->
+    <div class="detail-body">
+      <p class="detail-text-bn" id="detailTextBn">—</p>
+      <p class="detail-text-en" id="detailTextEn">—</p>
+    </div>
+
+  </aside>
+
+  <!-- ═══════════════════════════════════════════════
+       DEBUG PANEL — animation controls
+       ═══════════════════════════════════════════════ -->
+  <div class="debug-panel" id="debugPanel">
+    <button class="debug-toggle" id="debugToggle"
+            aria-expanded="false" aria-controls="debugContent">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+        <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/>
+        <path d="M7 4v4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        <circle cx="7" cy="9.5" r="0.6" fill="currentColor"/>
+      </svg>
+      অ্যানিমেশন
+    </button>
+
+    <div class="debug-content" id="debugContent" hidden>
+      <div class="debug-actions">
+        <button class="debug-btn debug-btn--primary" id="playBtn">▶ চালু</button>
+        <button class="debug-btn debug-btn--ghost" id="pauseBtn">⏸ বিরতি</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════
+       ATTRIBUTION FOOTER
+       10MS Rule: body copy, green-link for URLs
+       ═══════════════════════════════════════════════ -->
+  <footer class="attribution" role="contentinfo">
+    <p>
+      3D model:
+      <a href="https://sketchfab.com/3d-models/human-heart-beating-annotations-10e9a26f7e004a09bb357d30e4e35f29"
+         target="_blank" rel="noopener noreferrer">
+        Human Heart Beating – Annotations
+      </a>
+      by dcpisith · Remix of
+      <a href="https://sketchfab.com/marxtrax" target="_blank" rel="noopener noreferrer">@marxtrax</a>
+      · CC Attribution
+    </p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
