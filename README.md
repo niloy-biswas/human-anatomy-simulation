@@ -1,10 +1,29 @@
-# Human heart & body 3D anatomy
+# Human Heart & Body — 3D Anatomy
 
-Static site with an interactive heart viewer (`model-viewer`) and a full-body viewer (Three.js + Z-Anatomy GLB).
+Interactive 3D anatomy viewer built for 10 Minute School. Heart viewer (`model-viewer`) + full-body viewer (Three.js + Z-Anatomy GLB).
+
+## Routes
+
+| URL | Page |
+| --- | --- |
+| `/` | Heart viewer (3D interactive heart) |
+| `/heart` | Same as `/` |
+| `/body` | Full-body viewer — all systems |
+| `/skeletal` | Full body, Skeletal System selected |
+| `/joints` | Full body, Joints selected |
+| `/muscular` | Full body, Muscular System selected |
+| `/fasciae` | Full body, Fasciae selected |
+| `/arterial` | Full body, Arterial System selected |
+| `/venous` | Full body, Venous System selected |
+| `/lymphoid` | Full body, Lymphoid System selected |
+| `/nervous` | Full body, Nervous System selected |
+| `/visceral` | Full body, Visceral Systems selected |
+
+Routes are handled by `vercel.json` rewrites in production. Locally, navigate to `body.html?` directly or use the system buttons.
 
 ## Run locally
 
-Do not open HTML files with `file://`. Browsers block loading GLBs and ES modules that way.
+Do not open HTML files with `file://` — browsers block GLBs and ES modules that way.
 
 ### Option A — Serve (recommended)
 
@@ -15,10 +34,13 @@ cd human-heart-simulation
 npx --yes serve .
 ```
 
-Then open:
+Open:
 
-- **Heart:** [http://localhost:3000](http://localhost:3000) (or the URL `serve` prints)
-- **Full body:** [http://localhost:3000/body.html](http://localhost:3000/body.html)
+- **Heart:** `http://localhost:3000/`
+- **Full body:** `http://localhost:3000/body.html`
+- **Specific system (local):** `http://localhost:3000/body.html` then toggle sidebar
+
+> URL-based system selection (`/skeletal`, `/muscular` etc.) works locally too — `serve.json` mirrors the Vercel rewrites.
 
 ### Option B — Python
 
@@ -27,21 +49,21 @@ cd human-heart-simulation
 python3 -m http.server 8080
 ```
 
-Open [http://localhost:8080](http://localhost:8080) and [http://localhost:8080/body.html](http://localhost:8080/body.html).
+Open `http://localhost:8080` (heart) and `http://localhost:8080/body.html` (body).
 
 ## Deploy (Vercel)
 
-Connect the repo in the Vercel dashboard, import as a static project (no build step). The site root is this folder; `vercel.json` sets long cache headers for GLB assets.
+Connect the repo in the Vercel dashboard, import as a static project (no build step). `vercel.json` handles route rewrites and sets long-cache headers for GLB assets.
 
 ## Assets
 
 | File | Purpose |
 | --- | --- |
-| `assets/heart.glb` | Heart model for `index.html` |
-| `assets/z-anatomy-draco.glb` | Compressed full-body model for `body.html` (Draco) |
+| `assets/heart.glb` | Heart model for the heart viewer |
+| `assets/z-anatomy-draco.glb` | Draco-compressed full-body model (23 MB) |
 
-The uncompressed `assets/z-anatomy.glb` is ignored by Git (large file). If you only have the full-size export locally, place it at `assets/z-anatomy.glb`; `body.js` falls back to it when the Draco file is missing.
+`assets/z-anatomy.glb` (155 MB, uncompressed) is Git-ignored. Place it at that path if you need the raw file; `body.js` falls back to it when the Draco version is missing.
 
 ## 3D model credit
 
-Full-body data is from the [Z-Anatomy](https://github.com/LluisV/Z-Anatomy) project (CC BY-SA 4.0). Keep attribution visible in your product where you use the model.
+Full-body data: [Z-Anatomy](https://github.com/LluisV/Z-Anatomy) by Lluís Vinent Juanico — **CC BY-SA 4.0**. Attribution must remain visible in any product using this model.
