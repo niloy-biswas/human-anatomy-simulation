@@ -1,22 +1,32 @@
 {
+  "rewrites": [
+    { "source": "/heart",    "destination": "/index.html" },
+    { "source": "/body",     "destination": "/body.html" },
+    { "source": "/skeletal", "destination": "/body.html" },
+    { "source": "/joints",   "destination": "/body.html" },
+    { "source": "/muscular", "destination": "/body.html" },
+    { "source": "/fasciae",  "destination": "/body.html" },
+    { "source": "/arterial", "destination": "/body.html" },
+    { "source": "/venous",   "destination": "/body.html" },
+    { "source": "/lymphoid", "destination": "/body.html" },
+    { "source": "/nervous",  "destination": "/body.html" },
+    { "source": "/visceral", "destination": "/body.html" }
+  ],
   "headers": [
     {
       "source": "/assets/(.*)\\.glb",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" },
+        { "key": "Cross-Origin-Resource-Policy", "value": "cross-origin" }
       ]
     },
     {
       "source": "/(.*)\\.css",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=86400" }
-      ]
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=86400" }]
     },
     {
       "source": "/(.*)\\.js",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=86400" }
-      ]
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=86400" }]
     }
   ]
 }

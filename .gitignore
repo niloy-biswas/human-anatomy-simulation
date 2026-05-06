@@ -1,1 +1,5 @@
 .DS_Store
+
+# Original uncompressed Z-Anatomy file (155MB) — too large for git
+# Use assets/z-anatomy-draco.glb (23MB, Draco-compressed) instead
+assets/z-anatomy.glb

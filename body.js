@@ -1,0 +1,859 @@
+/**
+ * ═══════════════════════════════════════════════════════════════
+ *  মানব শরীর — Full Body 3D Anatomy Viewer  |  body.js
+ *  Uses Three.js r168 + GLTFLoader + OrbitControls
+ *  Model: Z-Anatomy (CC BY-SA 4.0)
+ * ═══════════════════════════════════════════════════════════════
+ */
+
+import * as THREE from 'three';
+import { GLTFLoader }    from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader }   from 'three/addons/loaders/DRACOLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+/* ─── Anatomy Systems Config ──────────────────────────────────── */
+const SYSTEMS = [
+  { key: 'skeletal', labelBn: 'অস্থিতন্ত্র',  labelEn: 'Skeletal System',  color: '#D4C5A9', visible: true  },
+  { key: 'joints',   labelBn: 'সন্ধি',         labelEn: 'Joints',           color: '#B8C5D6', visible: false },
+  { key: 'muscular', labelBn: 'পেশীতন্ত্র',   labelEn: 'Muscular System',  color: '#C0392B', visible: false },
+  { key: 'fasciae',  labelBn: 'ফ্যাসিয়া',    labelEn: 'Fasciae',          color: '#E8C9A0', visible: false },
+  { key: 'arterial', labelBn: 'ধমনীতন্ত্র',  labelEn: 'Arterial System',  color: '#E74C3C', visible: false },
+  { key: 'venous',   labelBn: 'শিরাতন্ত্র',  labelEn: 'Venous System',    color: '#2980B9', visible: false },
+  { key: 'lymphoid', labelBn: 'লসিকাতন্ত্র', labelEn: 'Lymphoid System',  color: '#8E44AD', visible: false },
+  { key: 'nervous',  labelBn: 'স্নায়ুতন্ত্র', labelEn: 'Nervous System',  color: '#F1C40F', visible: false },
+  { key: 'visceral', labelBn: 'অঙ্গতন্ত্র',  labelEn: 'Visceral Systems', color: '#E67E22', visible: false },
+];
+
+/**
+ * Per-material-name colors matching Z-Anatomy's visual palette.
+ * Materials without baseColorFactor default to white in Three.js;
+ * this map overrides them with anatomically accurate colors.
+ */
+const Z_ANATOMY_MAT_COLORS = {
+  // Bones — warm peachy-tan matching Z-anatomy palette
+  'Bone':   0xC8A87C, 'Bone-1': 0xC8A87C, 'Bone-2': 0xC8A87C, 'Bone-3': 0xC8A87C,
+  'Bone-4': 0xC8A87C, 'Bone-5': 0xC8A87C, 'Bone-6': 0xC8A87C,
+  'Bone-7': 0xC8A87C, 'Bone-8': 0xC8A87C,
+  // Cartilage — sage/olive green (not teal) matching Z-anatomy
+  'Cartilage': 0x8A9E80,
+  // Sutures — grey (same as baseColorFactor they already have)
+  'Suture': 0xA0A0A0,
+  // Connective tissue
+  'Ligament': 0xC4A87A, 'Articular capsule': 0xC4A87A, 'Tendon': 0xD4B896,
+  // Teeth
+  'Teeth': 0xF5F0E0, 'Teeth-roots': 0xD4C4A0, 'Dentine': 0xE8DABB,
+  // Muscle origin/insertion marker dots
+  'Muscular origin': 0x8B2E1A,
+};
+
+/** Z-Anatomy Unity/UI meshes (*.st) */
+const Z_ANATOMY_UI_ST_NAMES = new Set([
+  'Colors.st', 'Cross-sections.st', 'Display.st', 'Layers.st',
+  'Manipulation.st', 'Navigation.st', 'Outliner.st', 'Selection.st', 'Stored views.st',
+]);
+
+/** Atlas reference overlays (often dark planes users confuse with “nothing visible”) */
+const REFERENCE_GEOM_RE = /Reference planes|Reference lines|Paramedian|Median plane|Coronal planes|Transverse planes|Sagittal planes\.g|Longitudinal planes\.g|^Movements\.|^General terms\./i;
+
+/* Scene-level roots we never want to show */
+const ROOT_HIDE_NAMES = new Set([
+  'HOW TO ...',
+  'Take a picture',
+  'Reference lines.g',
+  'Reference planes.g',
+  'Movements.g',
+  'General terms.g',
+  'Regions of human body.g',
+  'Cross Section X',
+  'Cross Section Y',
+  'Cross Section Z',
+  'Medulla-path',
+  "BezierCircle'",
+  // Also hide the *.st UI roots if they appear at top-level
+  ...Array.from(Z_ANATOMY_UI_ST_NAMES),
+]);
+
+/* ─── Bengali label map for well-known structures ─────────────── */
+const BN_LABELS = {
+  // Skeletal
+  'Femur': { bn: 'ঊরুর হাড়', desc: 'মানবদেহের সবচেয়ে বড় ও শক্তিশালী হাড়। এটি উরুতে অবস্থিত এবং হাঁটু ও নিতম্বের সাথে সংযুক্ত।' },
+  'Tibia': { bn: 'পায়ের নলার হাড়', desc: 'পায়ের নিচের অংশের দুটি হাড়ের মধ্যে বড়টি। এটি ভার বহন করে এবং হাঁটু থেকে গোড়ালি পর্যন্ত বিস্তৃত।' },
+  'Fibula': { bn: 'পায়ের সরু হাড়', desc: 'পায়ের নলার পাশের সরু হাড়। এটি সরাসরি ওজন বহন করে না কিন্তু গোড়ালির স্থিতিশীলতায় সাহায্য করে।' },
+  'Humerus': { bn: 'বাহুর হাড়', desc: 'ওপরের বাহুর প্রধান হাড়। কাঁধ থেকে কনুই পর্যন্ত বিস্তৃত।' },
+  'Radius': { bn: 'বাহুর বাইরের হাড়', desc: 'কনুই থেকে কব্জি পর্যন্ত বিস্তৃত দুটি হাড়ের মধ্যে একটি।' },
+  'Ulna': { bn: 'বাহুর ভেতরের হাড়', desc: 'কনুই থেকে কব্জি পর্যন্ত বিস্তৃত দুটি হাড়ের মধ্যে অন্যটি।' },
+  'Skull': { bn: 'খুলি', desc: 'মাথার হাড়সমূহ যা মস্তিষ্ককে সুরক্ষিত রাখে।' },
+  'Mandible': { bn: 'চোয়ালের হাড়', desc: 'নিচের চোয়ালের হাড়। এটি মুখের একমাত্র নড়াচড়াযোগ্য হাড়।' },
+  'Clavicle': { bn: 'কলারবোন', desc: 'বুকের উপর থেকে কাঁধ পর্যন্ত বিস্তৃত S-আকৃতির হাড়।' },
+  'Scapula': { bn: 'কাঁধের হাড়', desc: 'পিঠের উপরের দিকে অবস্থিত ত্রিভুজাকার হাড়।' },
+  'Sternum': { bn: 'বুকের সামনের হাড়', desc: 'বুকের মাঝখানে অবস্থিত হাড় যার সাথে পাঁজর সংযুক্ত।' },
+  'Patella': { bn: 'হাঁটুর হাড়', desc: 'হাঁটুর সামনে অবস্থিত ছোট গোলাকার হাড়।' },
+  'Pelvis': { bn: 'পেলভিস', desc: 'নিতম্বের হাড়ের কাঠামো যা মেরুদণ্ড ও পায়ের হাড়ের সাথে সংযুক্ত।' },
+  'Sacrum': { bn: 'মেরুদণ্ডের নিচের হাড়', desc: 'মেরুদণ্ডের নিচের দিকে অবস্থিত ত্রিভুজাকার হাড়।' },
+  'Vertebral column': { bn: 'মেরুদণ্ড', desc: 'পিঠের মাঝ বরাবর ৩৩টি কশেরুকা নিয়ে গঠিত কাঠামো।' },
+  // Muscular
+  'Deltoid muscle': { bn: 'ডেলটয়েড পেশী', desc: 'কাঁধের গোলাকার পেশী যা বাহু তোলার কাজ করে।' },
+  'Biceps brachii muscle': { bn: 'বাইসেপস পেশী', desc: 'বাহুর সামনের দিকের দ্বি-শীর্ষ পেশী। কনুই বাঁকাতে সাহায্য করে।' },
+  'Triceps brachii muscle': { bn: 'ট্রাইসেপস পেশী', desc: 'বাহুর পেছনের ত্রি-শীর্ষ পেশী। কনুই সোজা করতে সাহায্য করে।' },
+  'Pectoralis major muscle': { bn: 'বুকের প্রধান পেশী', desc: 'বুকের সামনের বড় পেশী যা বাহু নাড়াতে সাহায্য করে।' },
+  'Trapezius muscle': { bn: 'ট্র্যাপিজিয়াস পেশী', desc: 'ঘাড় ও পিঠের উপরের বড় ত্রিভুজাকার পেশী।' },
+  'Levator ani': { bn: 'পেলভিক ফ্লোর পেশী', desc: 'পেলভিসের তলায় অবস্থিত পেশী যা অভ্যন্তরীণ অঙ্গগুলিকে ধরে রাখে।' },
+  // Arterial / Venous
+  'Aorta': { bn: 'মহাধমনী', desc: 'মানবদেহের সবচেয়ে বড় ধমনী। হৃদপিণ্ড থেকে অক্সিজেনযুক্ত রক্ত সারা শরীরে পাঠায়।' },
+  'Heart': { bn: 'হৃদপিণ্ড', desc: 'বুকের মাঝে অবস্থিত পেশীবহুল অঙ্গ যা পাম্প করে সারা শরীরে রক্ত সরবরাহ করে। প্রতি মিনিটে ৬০-১০০ বার স্পন্দন করে।' },
+  // Nervous
+  'Brain': { bn: 'মস্তিষ্ক', desc: 'কেন্দ্রীয় স্নায়ুতন্ত্রের প্রধান অঙ্গ। চিন্তা, স্মৃতি, আবেগ ও শরীরের সব কার্যক্রম নিয়ন্ত্রণ করে।' },
+  'Cerebrum': { bn: 'সেরিব্রাম', desc: 'মস্তিষ্কের সবচেয়ে বড় অংশ। চিন্তা, ভাষা, স্মৃতি ও ইচ্ছাকৃত নড়াচড়া নিয়ন্ত্রণ করে।' },
+  'Cerebellum': { bn: 'সেরিবেলাম', desc: 'মস্তিষ্কের পেছনের অংশ যা ভারসাম্য ও সমন্বয় নিয়ন্ত্রণ করে।' },
+  'Spinal cord': { bn: 'মেরুরজ্জু', desc: 'মস্তিষ্ক থেকে বিস্তৃত স্নায়ুর প্রধান গুচ্ছ। মস্তিষ্ক ও শরীরের মধ্যে বার্তা আদান-প্রদান করে।' },
+  // Visceral
+  'Left lung': { bn: 'বাম ফুসফুস', desc: 'বুকের বাম দিকে অবস্থিত ফুসফুস। হৃদপিণ্ডের জন্য কিছুটা ছোট।' },
+  'Right lung': { bn: 'ডান ফুসফুস', desc: 'বুকের ডান দিকে অবস্থিত ফুসফুস। তিনটি খণ্ডে বিভক্ত।' },
+  'Lungs': { bn: 'ফুসফুস', desc: 'বুকের মধ্যে অবস্থিত শ্বসন অঙ্গ। রক্তে অক্সিজেন সরবরাহ করে এবং কার্বন ডাই-অক্সাইড বের করে দেয়।' },
+  'Liver': { bn: 'যকৃৎ / লিভার', desc: 'পেটের ডান উপরের দিকে অবস্থিত সবচেয়ে বড় গ্রন্থি। হজম, ডিটক্স ও প্রোটিন তৈরিতে ভূমিকা রাখে।' },
+  'Stomach': { bn: 'পাকস্থলী', desc: 'খাদ্যনালীর থলির মতো অঙ্গ যা খাবার হজম করে।' },
+  'Kidneys': { bn: 'বৃক্ক / কিডনি', desc: 'পিঠের নিচের দিকে দুটি শিমের আকৃতির অঙ্গ। রক্ত পরিষ্কার করে ও মূত্র তৈরি করে।' },
+  'Urinary bladder': { bn: 'মূত্রথলি', desc: 'পেলভিসে অবস্থিত মূত্র সঞ্চয়কারী থলি।' },
+  'Small intestine': { bn: 'ক্ষুদ্রান্ত্র', desc: 'পেটের মধ্যে কুণ্ডলীকৃত নলাকার অঙ্গ যেখানে খাদ্যের পুষ্টি শোষিত হয়।' },
+  'Large intestine': { bn: 'বৃহদান্ত্র', desc: 'ক্ষুদ্রান্ত্রের পরের অঙ্গ যেখানে জলীয় অংশ শোষিত হয়।' },
+  'Pharynx': { bn: 'গলবিল', desc: 'গলার পেছনের অংশ যা খাদ্য ও বায়ু উভয়ের পথ হিসেবে কাজ করে।' },
+  'Larynx': { bn: 'স্বরযন্ত্র', desc: 'গলার নলায় অবস্থিত কণ্ঠস্বর উৎপাদনকারী অঙ্গ।' },
+  'Thymus': { bn: 'থাইমাস গ্রন্থি', desc: 'বুকের উপরের দিকে অবস্থিত রোগ প্রতিরোধ সম্পর্কিত গ্রন্থি।' },
+  // Sense organs
+  'Eye': { bn: 'চোখ', desc: 'দৃষ্টিশক্তির অঙ্গ। আলো গ্রহণ করে মস্তিষ্কে দৃশ্য সংকেত পাঠায়।' },
+  'Ear': { bn: 'কান', desc: 'শ্রবণ ও ভারসাম্যের অঙ্গ।' },
+};
+
+/* ─── DOM Elements ────────────────────────────────────────────── */
+const canvas       = document.getElementById('bvCanvas');
+const loadingEl    = document.getElementById('bvLoading');
+const progressBar  = document.getElementById('bvProgressBar');
+const progressText = document.getElementById('bvProgressText');
+const hintEl       = document.getElementById('bvHint');
+const tooltipEl    = document.getElementById('bvTooltip');
+const hudEl        = document.getElementById('bvHud');
+const systemList   = document.getElementById('systemList');
+const btnShowAll   = document.getElementById('btnShowAll');
+const btnHideAll   = document.getElementById('btnHideAll');
+const detailPanel  = document.getElementById('detailPanel');
+const detailBackdrop = document.getElementById('detailBackdrop');
+const detailClose  = document.getElementById('detailClose');
+const detailTitleBn  = document.getElementById('detailTitleBn');
+const detailTitleEn  = document.getElementById('detailTitleEn');
+const detailTextBn   = document.getElementById('detailTextBn');
+const detailTextEn   = document.getElementById('detailTextEn');
+const detailBadge    = document.getElementById('detailSystemBadge');
+const mobileSysBtn   = document.getElementById('bvMobileSysBtn');
+const sidebar        = document.getElementById('bvSidebar');
+
+/* ─── Three.js Scene Setup ────────────────────────────────────── */
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(canvas.parentElement.clientWidth, canvas.parentElement.clientHeight);
+renderer.shadowMap.enabled = false;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.35;
+
+const scene  = new THREE.Scene();
+scene.background = new THREE.Color(0x0a0f1a);
+
+const camera = new THREE.PerspectiveCamera(
+  45,
+  canvas.parentElement.clientWidth / canvas.parentElement.clientHeight,
+  0.01, 100
+);
+camera.position.set(0, 1.6, 3.5);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+controls.minDistance   = 0.3;
+controls.maxDistance   = 12;
+controls.target.set(0, 1.0, 0);
+controls.update();
+
+/* Lights — low ambient to preserve shadow depth, strong directional for shape */
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+scene.add(ambientLight);
+
+const dirLight1 = new THREE.DirectionalLight(0xfff5e0, 2.2); // warm key light
+dirLight1.position.set(2, 4, 3);
+scene.add(dirLight1);
+
+const dirLight2 = new THREE.DirectionalLight(0xc8d8ff, 0.8); // cool fill from left
+dirLight2.position.set(-3, 2, -2);
+scene.add(dirLight2);
+
+const hemiLight = new THREE.HemisphereLight(0x8899bb, 0x443322, 0.6); // sky/ground gradient
+scene.add(hemiLight);
+
+/* ─── State ───────────────────────────────────────────────────── */
+const systemNodes  = {};   // key → THREE.Object3D
+let   anatomyRoot  = null; // glTF root — raycasting uses this so parent visibility works
+let   hoveredMesh  = null;
+let   selectedMesh = null;
+const raycaster    = new THREE.Raycaster();
+raycaster.params.Mesh.threshold = 0;
+const pointer      = new THREE.Vector2();
+let   modelLoaded  = false;
+
+/* ─── Highlight Colors ────────────────────────────────────────── */
+// Color-swap approach: change material.color directly (emissive fails on bright white bones).
+const HOVER_COLOR    = new THREE.Color(0x6EE7B7); // mint green — visible on any base color
+const SELECTED_COLOR = new THREE.Color(0x1CAB55); // brand green — clearly selected
+
+/* ─── Per-system anatomy mesh registry ───────────────────────── */
+// Built at load time. toggleSystem sets visible directly on these meshes
+// rather than relying on Three.js parent-visibility propagation.
+const systemMeshes = {};   // key → THREE.Mesh[]
+
+/* ─── GLTF Loader ─────────────────────────────────────────────── */
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+
+const loader = new GLTFLoader();
+loader.setDRACOLoader(dracoLoader);
+
+/* Try Draco-compressed first, fall back to original */
+const MODEL_URL_DRACO = './assets/z-anatomy-draco.glb';
+const MODEL_URL_RAW   = './assets/z-anatomy.glb';
+
+function loadModel(url) {
+  loader.load(
+    url,
+    onModelLoaded,
+    (xhr) => {
+      if (xhr.lengthComputable) {
+        const pct = Math.round((xhr.loaded / xhr.total) * 100);
+        progressBar.style.width  = pct + '%';
+        progressText.textContent = pct + '%';
+      }
+    },
+    (err) => {
+      if (url === MODEL_URL_DRACO) {
+        console.warn('[body] Draco version not ready, loading original…');
+        loadModel(MODEL_URL_RAW);
+      } else {
+        console.error('[body] Failed to load model:', err);
+        showLoadError();
+      }
+    }
+  );
+}
+
+loadModel(MODEL_URL_DRACO);
+
+/**
+ * Raycast the loaded model. Using intersectObject(root, true) respects
+ * ancestor Object3D.visible; intersectObjects(flatMeshList) does not.
+ */
+function pickAnatomyHits() {
+  if (!anatomyRoot) return [];
+  return raycaster
+    .intersectObject(anatomyRoot, true)
+    .filter((h) => h.object.isMesh && !isDecorationMesh(h.object) && isWorldVisible(h.object));
+}
+
+/** Strip Z-Anatomy atlas UI (explicit names only — never blanket `*.st`). */
+function hideZAnatomyUiChrome(object3d) {
+  object3d.traverse((obj) => {
+    const n = (obj.name || '').trim();
+    if (n.startsWith('HOW TO')) obj.visible = false;
+    if (Z_ANATOMY_UI_ST_NAMES.has(n)) obj.visible = false;
+    /* Blender/Unity sometimes drops the dot: "Navigationst" */
+    if (/^navigation/i.test(n)) obj.visible = false;
+  });
+}
+
+/** Z-Anatomy text annotation material names — every group node has a "Text" mesh attached as its own geometry.
+ *  These nodes are ALSO the visibility containers for anatomy children, so we must NOT hide them
+ *  (visible=false would hide all anatomy children too). Instead we make them transparent. */
+const Z_ANATOMY_TEXT_MAT_NAMES = new Set(['Text', 'Text-2']);
+
+function isDecorationMesh(mesh) {
+  const n = (mesh.name || '').trim();
+  if (/^navigation/i.test(n)) return true;
+  if (Z_ANATOMY_UI_ST_NAMES.has(n)) return true;
+  if (REFERENCE_GEOM_RE.test(n)) return true;
+  return false;
+}
+
+/**
+ * Z-Anatomy’s Unity PBR (specular / clearcoat / emissive tricks) often renders solid black in browsers.
+ * Use MeshLambert + strong ambient — always shows silhouette; preserves diffuse maps if present.
+ */
+function replaceMaterialsWithLambert(root) {
+  root.traverse((obj) => {
+    if (!obj.isMesh || !obj.material) return;
+
+    if (isDecorationMesh(obj)) {
+      obj.visible = false;
+      return;
+    }
+
+    const oldList = Array.isArray(obj.material) ? obj.material : [obj.material];
+
+    // Text annotation nodes are both the text-label geometry AND the visibility container
+    // for anatomy children. Making them visible=false would hide all children too.
+    // Instead make them fully transparent so text disappears but children still render.
+    if (oldList.some(m => m && Z_ANATOMY_TEXT_MAT_NAMES.has(m.name))) {
+      obj.material = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false });
+      obj.raycast = () => {};
+      return;
+    }
+
+    const geom = obj.geometry;
+    if (geom?.isBufferGeometry && geom.attributes.position && !geom.attributes.normal) {
+      geom.computeVertexNormals();
+    }
+
+    const newList = oldList.map((m) => {
+      if (!m) return m;
+      const hasMap = !!m.map;
+      return new THREE.MeshLambertMaterial({
+        name: m.name,
+        map: m.map,
+        vertexColors: false,
+        color: hasMap ? new THREE.Color(1, 1, 1) : (m.color?.clone() ?? new THREE.Color(0xdccab8)),
+        side: THREE.DoubleSide,
+        transparent: false,
+        opacity: 1,
+        emissive: new THREE.Color(0x000000),
+      });
+    });
+    obj.material = Array.isArray(obj.material) ? newList : newList[0];
+  });
+}
+
+/* ─── On Model Loaded ─────────────────────────────────────────── */
+function onModelLoaded(gltf) {
+  const root = gltf.scene;
+  anatomyRoot = root;
+
+  // GLB-verified root child positions (z-anatomy-draco.glb).
+  // Three.js may sanitize or suffix node names, making string matching unreliable.
+  // Using positional indices from confirmed GLB JSON inspection instead.
+  const SYSTEM_CHILD_INDICES = { skeletal:2, joints:3, muscular:4, fasciae:5, arterial:6, venous:7, lymphoid:8, nervous:9, visceral:10 };
+
+  root.children.forEach((child, idx) => {
+    const key = Object.keys(SYSTEM_CHILD_INDICES).find(k => SYSTEM_CHILD_INDICES[k] === idx);
+    if (key) {
+      systemNodes[key] = child;
+      child.visible = SYSTEMS.find(s => s.key === key)?.visible ?? true;
+    } else {
+      child.visible = false; // positions 0,1 and 11+ are UI/reference — always hidden
+    }
+  });
+
+
+  hideZAnatomyUiChrome(root);
+  replaceMaterialsWithLambert(root);
+  root.traverse((o) => { o.frustumCulled = false; });
+
+  // Force matrix update before bounds — matrixWorld is stale until scene.add or explicit update.
+  root.updateMatrixWorld(false, true);
+
+  // Use ALL anatomy meshes (not just visible) for scale/position so it never fails
+  // when the only initially-visible system has geometry issues.
+  const anatomyBounds = new THREE.Box3();
+  let anatomyMeshCount = 0;
+  root.traverse((o) => {
+    if (!o.isMesh || isDecorationMesh(o)) return;
+    anatomyMeshCount++;
+    anatomyBounds.expandByObject(o);
+  });
+
+  if (anatomyMeshCount > 0 && !anatomyBounds.isEmpty() && isFinite(anatomyBounds.min.x)) {
+    const size0   = anatomyBounds.getSize(new THREE.Vector3());
+    const center0 = anatomyBounds.getCenter(new THREE.Vector3());
+    const maxDim0 = Math.max(size0.x, size0.y, size0.z) || 1;
+    const scale   = 3.0 / maxDim0;
+    root.scale.setScalar(scale);
+    root.position.copy(center0.clone().multiplyScalar(-scale));
+  }
+
+  // Refresh matrices after repositioning.
+  root.updateMatrixWorld(false, true);
+
+  // Ensure at least one anatomy system is visible.
+  const visibleMeshCount = (() => {
+    let n = 0;
+    root.traverse((o) => { if (o.isMesh && isWorldVisible(o) && !isDecorationMesh(o)) n++; });
+    return n;
+  })();
+  if (visibleMeshCount === 0) {
+    const fallback = SYSTEMS.find((s) => s.key === 'skeletal') ?? SYSTEMS[0];
+    if (fallback && systemNodes[fallback.key]) {
+      SYSTEMS.forEach((s) => { s.visible = false; if (systemNodes[s.key]) systemNodes[s.key].visible = false; });
+      fallback.visible = true;
+      systemNodes[fallback.key].visible = true;
+    } else {
+      root.children.forEach((c) => { c.visible = !ROOT_HIDE_NAMES.has((c.name || '').trim()); });
+    }
+  }
+
+  // Build per-system anatomy mesh registry.
+  // Walk each system node's subtree, collecting non-text anatomy meshes.
+  // toggleSystem uses this list to set visible directly — bypasses parent-propagation issues.
+  SYSTEMS.forEach(s => { systemMeshes[s.key] = []; });
+  root.traverse((obj) => {
+    if (!obj.isMesh) return;
+    const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+    const isText = mats.some(m => m && (m.transparent === true && m.opacity === 0));
+    if (isText) return; // skip transparent text annotation meshes
+
+    // Walk up to find which system group owns this mesh.
+    let cur = obj.parent;
+    while (cur && cur !== root) {
+      const key = Object.keys(systemNodes).find(k => systemNodes[k] === cur);
+      if (key) { systemMeshes[key].push(obj); break; }
+      cur = cur.parent;
+    }
+  });
+
+  // Apply colors to anatomy meshes whose material has no baseColorFactor (pure white default).
+  // Priority: per-material-name map → system color. Meshes with real colors keep theirs.
+  SYSTEMS.forEach(s => {
+    const sysHex = parseInt(s.color.slice(1), 16);
+    (systemMeshes[s.key] ?? []).forEach(mesh => {
+      const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      mats.forEach(m => {
+        if (!m?.color) return;
+        // Keep materials with a meaningful hue (organs: brain, lungs, fascia, etc.).
+        // Override neutral/achromatic materials (white, near-white, grey) — these are bones,
+        // muscles, nerves etc. that store colour via KHR extensions, not baseColorFactor.
+        const r = m.color.r, g = m.color.g, b = m.color.b;
+        const maxC = Math.max(r, g, b);
+        const sat  = maxC > 0 ? (maxC - Math.min(r, g, b)) / maxC : 0;
+        if (sat > 0.15 || maxC < 0.45) return; // skip vivid or very dark colours
+        const mapped = Z_ANATOMY_MAT_COLORS[m.name];
+        m.color.setHex(mapped !== undefined ? mapped : sysHex);
+      });
+    });
+  });
+
+  // Apply initial visibility per sys.visible — must run after systemMeshes is built
+  // because toggleSystem sets mesh.visible directly.
+  SYSTEMS.forEach(s => { if (!s.visible) toggleSystem(s.key, false); });
+
+  root.traverse((obj) => {
+    if (obj.isMesh) obj.userData.origColor = obj.material?.color?.clone() ?? null;
+  });
+
+  scene.add(root);
+  modelLoaded = true;
+
+  // Matrices must be refreshed after scene.add so expandByObject gives world coords.
+  root.updateMatrixWorld(false, true);
+
+  // Auto-frame on visible anatomy meshes.
+  const box1 = new THREE.Box3();
+  let frameCount = 0;
+  root.traverse((o) => {
+    if (!o.isMesh || !isWorldVisible(o) || isDecorationMesh(o)) return;
+    frameCount++;
+    box1.expandByObject(o);
+  });
+  if (frameCount === 0 || box1.isEmpty()) box1.setFromObject(root);
+
+  const size1   = box1.getSize(new THREE.Vector3());
+  const center1 = box1.getCenter(new THREE.Vector3());
+  const maxDim1 = Math.max(size1.x, size1.y, size1.z) || 1;
+
+  controls.target.copy(center1);
+  const dist = maxDim1 * 1.6;
+  camera.near = Math.max(0.001, dist / 200);
+  camera.far  = Math.max(50, dist * 200);
+  camera.updateProjectionMatrix();
+  camera.position.copy(center1).add(new THREE.Vector3(0, maxDim1 * 0.15, dist));
+  controls.update();
+
+  // URL-based system selection: /skeletal, /muscular, /visceral, etc.
+  const urlKey = window.location.pathname.replace(/^\//, '').toLowerCase();
+  if (SYSTEMS.some(s => s.key === urlKey)) {
+    SYSTEMS.forEach(s => { s.visible = (s.key === urlKey); });
+    SYSTEMS.forEach(s => toggleSystem(s.key, s.visible));
+  }
+
+  buildSidebar();
+
+  loadingEl.style.opacity = '0';
+  setTimeout(() => { loadingEl.style.display = 'none'; }, 500);
+  setTimeout(() => hintEl?.classList.add('fade-out'), 5000);
+
+  requestAnimationFrame(() => {
+    ensureCanvasSize();
+    controls.update();
+  });
+}
+
+function showLoadError() {
+  loadingEl.innerHTML = `
+    <div class="bv-loading-card">
+      <p style="color:#E74C3C;font-family:'Inter',sans-serif;font-size:14px;margin:0 0 8px">মডেল লোড ব্যর্থ হয়েছে</p>
+      <p style="color:#7a8099;font-family:'Inter',sans-serif;font-size:12px;margin:0">
+        <code>assets/z-anatomy.glb</code> পাওয়া যাচ্ছে না।<br/>
+        Local server দিয়ে চালু করুন: <code>npx serve .</code>
+      </p>
+    </div>`;
+}
+
+/* ─── Build Sidebar System Toggles ───────────────────────────── */
+function buildSidebar() {
+  systemList.innerHTML = '';
+  SYSTEMS.forEach(sys => {
+    const item = document.createElement('label');
+    item.className = 'bv-system-item';
+    item.dataset.key = sys.key;
+
+    const checkbox = document.createElement('input');
+    checkbox.type    = 'checkbox';
+    checkbox.checked = sys.visible;
+    checkbox.addEventListener('change', () => toggleSystem(sys.key, checkbox.checked));
+
+    const dot = document.createElement('span');
+    dot.className = 'bv-system-dot';
+    dot.style.background = sys.color;
+
+    const labels = document.createElement('span');
+    labels.className = 'bv-system-labels';
+    labels.innerHTML = `<span class="bv-sys-bn">${sys.labelBn}</span><span class="bv-sys-en">${sys.labelEn}</span>`;
+
+    item.appendChild(checkbox);
+    item.appendChild(dot);
+    item.appendChild(labels);
+    systemList.appendChild(item);
+  });
+}
+
+function toggleSystem(key, visible) {
+  // Direct mesh visibility — no dependency on Three.js parent propagation.
+  const meshes = systemMeshes[key] ?? [];
+  meshes.forEach(m => { m.visible = visible; });
+  // Also set the group node so HUD / isWorldVisible checks stay consistent.
+  const node = systemNodes[key];
+  if (node) node.visible = visible;
+  const sys = SYSTEMS.find(s => s.key === key);
+  if (sys) sys.visible = visible;
+}
+
+function isWorldVisible(obj) {
+  let cur = obj;
+  while (cur) {
+    if (cur.visible === false) return false;
+    cur = cur.parent;
+  }
+  return true;
+}
+
+btnShowAll.addEventListener('click', () => {
+  SYSTEMS.forEach(sys => toggleSystem(sys.key, true));
+  systemList.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = true);
+});
+
+btnHideAll.addEventListener('click', () => {
+  SYSTEMS.forEach(sys => toggleSystem(sys.key, false));
+  systemList.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = false);
+});
+
+/* ─── Mobile Sidebar Toggle ───────────────────────────────────── */
+function closeMobileSidebar() {
+  sidebar.classList.remove('bv-sidebar--open');
+  mobileSysBtn.setAttribute('aria-expanded', 'false');
+}
+
+mobileSysBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const open = sidebar.classList.toggle('bv-sidebar--open');
+  mobileSysBtn.setAttribute('aria-expanded', String(open));
+});
+
+// Tap outside sidebar → close it.
+document.addEventListener('click', (e) => {
+  if (!sidebar.classList.contains('bv-sidebar--open')) return;
+  if (sidebar.contains(e.target) || mobileSysBtn.contains(e.target)) return;
+  closeMobileSidebar();
+});
+document.addEventListener('touchstart', (e) => {
+  if (!sidebar.classList.contains('bv-sidebar--open')) return;
+  if (sidebar.contains(e.target) || mobileSysBtn.contains(e.target)) return;
+  closeMobileSidebar();
+}, { passive: true });
+
+/* ─── Raycasting — Hover ──────────────────────────────────────── */
+function getCanvasPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  pointer.x =  ((clientX - rect.left) / rect.width)  * 2 - 1;
+  pointer.y = -((clientY - rect.top)  / rect.height) * 2 + 1;
+}
+
+canvas.addEventListener('pointermove', (e) => {
+  if (!modelLoaded) return;
+  getCanvasPos(e);
+  raycaster.setFromCamera(pointer, camera);
+  const hits = pickAnatomyHits();
+
+  if (hoveredMesh && hoveredMesh !== selectedMesh) {
+    restoreHighlight(hoveredMesh);
+    hoveredMesh = null;
+  }
+
+  if (hits.length > 0) {
+    const mesh = hits[0].object;
+    if (mesh !== selectedMesh) {
+      setHighlight(mesh, HOVER_COLOR);
+      hoveredMesh = mesh;
+    }
+    showTooltip(mesh, e.clientX, e.clientY);
+    canvas.style.cursor = 'pointer';
+  } else {
+    hideTooltip();
+    canvas.style.cursor = '';
+  }
+});
+
+canvas.addEventListener('pointerleave', () => {
+  if (hoveredMesh && hoveredMesh !== selectedMesh) {
+    restoreHighlight(hoveredMesh);
+    hoveredMesh = null;
+  }
+  hideTooltip();
+});
+
+/* ─── Raycasting — Click ──────────────────────────────────────── */
+canvas.addEventListener('click', (e) => {
+  if (!modelLoaded) return;
+  getCanvasPos(e);
+  raycaster.setFromCamera(pointer, camera);
+  const hits = pickAnatomyHits();
+
+  if (hits.length > 0) {
+    const mesh = hits[0].object;
+    if (selectedMesh && selectedMesh !== mesh) {
+      restoreHighlight(selectedMesh);
+    }
+    selectedMesh = mesh;
+    setHighlight(mesh, SELECTED_COLOR);
+    focusMesh(mesh);
+    openDetailPanel(mesh);
+  } else {
+    if (selectedMesh) {
+      restoreHighlight(selectedMesh);
+      selectedMesh = null;
+    }
+    closeDetailPanel();
+  }
+});
+
+/* ─── Highlight Helper ────────────────────────────────────────── */
+// A single bone is often multiple GLTF primitives → multiple sibling Mesh objects.
+// Clicking one leaves the rest unhighlighted → "fracture" look.
+// Collect the clicked mesh + all non-text sibling meshes sharing the same parent.
+function getMeshGroup(mesh) {
+  const group = [mesh];
+  if (!mesh.parent) return group;
+  for (const sib of mesh.parent.children) {
+    if (sib === mesh || !sib.isMesh) continue;
+    const mats = Array.isArray(sib.material) ? sib.material : [sib.material];
+    if (mats.some(m => m?.transparent && m?.opacity === 0)) continue; // skip text
+    group.push(sib);
+  }
+  return group;
+}
+
+function setHighlight(mesh, color) {
+  getMeshGroup(mesh).forEach(m => {
+    const mats = Array.isArray(m.material) ? m.material : [m.material];
+    mats.forEach(mat => { if (mat?.color) mat.color.copy(color); });
+  });
+}
+
+function restoreHighlight(mesh) {
+  getMeshGroup(mesh).forEach(m => {
+    if (!m.userData.origColor) return;
+    const mats = Array.isArray(m.material) ? m.material : [m.material];
+    mats.forEach(mat => { if (mat?.color) mat.color.copy(m.userData.origColor); });
+  });
+}
+
+/* ─── Tooltip ─────────────────────────────────────────────────── */
+function showTooltip(mesh, x, y) {
+  const name = cleanName(mesh.name || mesh.parent?.name || '');
+  if (!name) return;
+  const bn = BN_LABELS[name];
+  tooltipEl.textContent = bn ? `${bn.bn} · ${name}` : name;
+  tooltipEl.style.left   = (x + 14) + 'px';
+  tooltipEl.style.top    = (y - 10) + 'px';
+  tooltipEl.hidden = false;
+}
+
+function hideTooltip() {
+  tooltipEl.hidden = true;
+}
+
+/* ─── Detail Panel ────────────────────────────────────────────── */
+function openDetailPanel(mesh) {
+  let name = cleanName(mesh.name || '');
+  if (!name && mesh.parent) name = cleanName(mesh.parent.name || '');
+
+  const data  = BN_LABELS[name];
+  const sys   = findSystemForMesh(mesh);
+
+  detailTitleBn.textContent = data ? data.bn : name;
+  detailTitleEn.textContent = name || '—';
+  detailTextBn.textContent  = data?.desc || 'এই অঙ্গ সম্পর্কে আরো বিস্তারিত তথ্য শীঘ্রই যুক্ত হবে।';
+  detailTextEn.textContent  = sys
+    ? `Part of the ${sys.labelEn}.`
+    : 'Part of human anatomy (Z-Anatomy · CC BY-SA 4.0).';
+
+  if (sys) {
+    detailBadge.textContent   = sys.labelBn;
+    detailBadge.style.background = sys.color + '22';
+    detailBadge.style.color      = sys.color;
+    detailBadge.style.borderColor = sys.color + '55';
+    detailBadge.hidden = false;
+  } else {
+    detailBadge.hidden = true;
+  }
+
+  detailPanel.hidden    = false;
+  detailBackdrop.hidden = false;
+  requestAnimationFrame(() => {
+    detailPanel.classList.add('is-open');
+    detailBackdrop.classList.add('is-visible');
+  });
+  detailPanel.setAttribute('aria-hidden', 'false');
+}
+
+function closeDetailPanel() {
+  detailPanel.classList.remove('is-open');
+  detailBackdrop.classList.remove('is-visible');
+  detailPanel.setAttribute('aria-hidden', 'true');
+  if (selectedMesh) {
+    restoreHighlight(selectedMesh);
+    selectedMesh = null;
+  }
+  detailPanel.addEventListener('transitionend', () => {
+    if (!detailPanel.classList.contains('is-open')) {
+      detailPanel.hidden    = true;
+      detailBackdrop.hidden = true;
+    }
+  }, { once: true });
+}
+
+detailClose.addEventListener('click', closeDetailPanel);
+detailBackdrop.addEventListener('click', closeDetailPanel);
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !detailPanel.hidden) closeDetailPanel();
+});
+
+/* ─── Helpers ─────────────────────────────────────────────────── */
+function cleanName(name) {
+  /* Strip Z-Anatomy suffixes: .t .e .g .o .r .l .e1 etc. */
+  return name.replace(/\.(t|e\d*|g|o\d*|r|l|st|j)$/, '').trim();
+}
+
+function findSystemForMesh(mesh) {
+  let obj = mesh;
+  while (obj) {
+    const sys = SYSTEMS.find(s => systemNodes[s.key] === obj);
+    if (sys) return sys;
+    obj = obj.parent;
+  }
+  return null;
+}
+
+/* ─── Focus Camera on Mesh ────────────────────────────────────── */
+function focusMesh(mesh) {
+  // Build world bounding box from the full mesh group (multi-primitive bones).
+  const box = new THREE.Box3();
+  getMeshGroup(mesh).forEach(m => box.expandByObject(m));
+  if (box.isEmpty()) return;
+
+  const center = box.getCenter(new THREE.Vector3());
+  const size   = box.getSize(new THREE.Vector3());
+  const maxDim = Math.max(size.x, size.y, size.z, 0.05);
+
+  // Distance needed to fit the object in the vertical FOV with padding.
+  const fovRad   = camera.fov * (Math.PI / 180);
+  const fitDist  = (maxDim / 2) / Math.tan(fovRad / 2) * 2.2;
+  const distance = Math.max(fitDist, controls.minDistance * 1.5);
+
+  // Keep current viewing direction, move camera along it to the fitted distance.
+  const dir     = camera.position.clone().sub(controls.target).normalize();
+  const targetCamPos = center.clone().add(dir.multiplyScalar(distance));
+
+  animateCameraTo(center, targetCamPos, 500);
+}
+
+function animateCameraTo(newTarget, newCamPos, durationMs) {
+  const startTarget = controls.target.clone();
+  const startCamPos = camera.position.clone();
+  const startTime   = performance.now();
+
+  function step() {
+    const t    = Math.min((performance.now() - startTime) / durationMs, 1);
+    const ease = 1 - Math.pow(1 - t, 3); // cubic ease-out
+
+    controls.target.lerpVectors(startTarget, newTarget, ease);
+    camera.position.lerpVectors(startCamPos, newCamPos, ease);
+    controls.update();
+
+    if (t < 1) requestAnimationFrame(step);
+  }
+
+  requestAnimationFrame(step);
+}
+
+/* ─── Resize Handler ──────────────────────────────────────────── */
+function onResize() {
+  const w = canvas.parentElement.clientWidth;
+  const h = canvas.parentElement.clientHeight;
+  if (!w || !h) return;
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h);
+}
+window.addEventListener('resize', onResize);
+
+function ensureCanvasSize(framesLeft = 12) {
+  onResize();
+  const size = renderer.getSize(new THREE.Vector2());
+  if ((size.x > 2 && size.y > 2) || framesLeft <= 0) return;
+  requestAnimationFrame(() => ensureCanvasSize(framesLeft - 1));
+}
+
+/* ─── Render Loop ─────────────────────────────────────────────── */
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+
+  if (hudEl && modelLoaded) {
+    const size = renderer.getSize(new THREE.Vector2());
+    const info = renderer.info;
+    const visibleMeshes = (() => {
+      let c = 0;
+      if (!anatomyRoot) return c;
+      anatomyRoot.traverse((o) => {
+        if (o.isMesh && isWorldVisible(o) && !isDecorationMesh(o)) c++;
+      });
+      return c;
+    })();
+
+    const text =
+      `canvas: ${Math.round(size.x)}×${Math.round(size.y)}\n` +
+      `visibleMeshes: ${visibleMeshes}\n` +
+      `calls: ${info.render.calls}  tris: ${info.render.triangles}\n` +
+      `points: ${info.render.points}  lines: ${info.render.lines}`;
+
+    hudEl.textContent = text;
+    // Auto-hide HUD when rendering looks healthy.
+    const healthy = size.x > 50 && size.y > 50 && info.render.calls > 0 && visibleMeshes > 0;
+    hudEl.hidden = healthy;
+  }
+}
+animate();
