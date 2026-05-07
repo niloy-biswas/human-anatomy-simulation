@@ -261,6 +261,7 @@ function replaceMaterialsWithLambert(root) {
     if (oldList.some(m => m && Z_ANATOMY_TEXT_MAT_NAMES.has(m.name))) {
       obj.material = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false });
       obj.raycast = () => {};
+      obj.userData.isTextLabel = true;
       return;
     }
 
@@ -320,7 +321,7 @@ function onModelLoaded(gltf) {
   const anatomyBounds = new THREE.Box3();
   let anatomyMeshCount = 0;
   root.traverse((o) => {
-    if (!o.isMesh || isDecorationMesh(o)) return;
+    if (!o.isMesh || isDecorationMesh(o) || o.userData.isTextLabel) return;
     anatomyMeshCount++;
     anatomyBounds.expandByObject(o);
   });
@@ -413,6 +414,7 @@ function onModelLoaded(gltf) {
   let frameCount = 0;
   root.traverse((o) => {
     if (!o.isMesh || !isWorldVisible(o) || isDecorationMesh(o)) return;
+    if (o.userData.isTextLabel) return;
     frameCount++;
     box1.expandByObject(o);
   });
@@ -422,12 +424,14 @@ function onModelLoaded(gltf) {
   const center1 = box1.getCenter(new THREE.Vector3());
   const maxDim1 = Math.max(size1.x, size1.y, size1.z) || 1;
 
-  controls.target.copy(center1);
+  // Use 58% up from box bottom as orbit target — avoids arm-span bias on geometric center
+  const orbitY = box1.min.y + size1.y * 0.58;
+  controls.target.set(center1.x, orbitY, center1.z);
   const dist = maxDim1 * 1.6;
   camera.near = Math.max(0.001, dist / 200);
   camera.far  = Math.max(50, dist * 200);
   camera.updateProjectionMatrix();
-  camera.position.copy(center1).add(new THREE.Vector3(0, maxDim1 * 0.15, dist));
+  camera.position.set(center1.x, orbitY, center1.z + dist);
   controls.update();
 
   // Save default view for reset button
