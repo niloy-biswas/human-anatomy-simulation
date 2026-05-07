@@ -182,10 +182,7 @@ const annotations = [
 const modelViewer     = document.getElementById("heartViewer");
 const loadingOverlay  = document.getElementById("loadingOverlay");
 const interactionHint = document.getElementById("interactionHint");
-const debugToggle     = document.getElementById("debugToggle");
-const debugContent    = document.getElementById("debugContent");
-const playBtn         = document.getElementById("playBtn");
-const pauseBtn        = document.getElementById("pauseBtn");
+const btnPlayPause    = document.getElementById("btnPlayPause");
 const detailPanel     = document.getElementById("detailPanel");
 const detailBackdrop  = document.getElementById("detailBackdrop");
 const detailClose     = document.getElementById("detailClose");
@@ -290,12 +287,6 @@ function buildHotspots() {
     modelViewer.appendChild(btn);
   });
 
-  console.info(
-    "%c[হৃদপিণ্ড] %c%d hotspot(s) injected",
-    "color:#1CAB55;font-weight:bold",
-    "color:#aaa",
-    annotations.length
-  );
 }
 
 /* ─── Model Load Handler ─────────────────────────────────────── */
@@ -303,29 +294,11 @@ modelViewer.addEventListener("load", () => {
   // ① Hide loading overlay
   loadingOverlay.classList.add("hidden");
 
-  // ② Read available animations
+  // ② Autoplay first animation
   const animations = modelViewer.availableAnimations ?? [];
-
-  console.group("%c[হৃদপিণ্ড] মডেল লোড সম্পন্ন", "color:#e63030;font-weight:bold");
-  console.info("availableAnimations:", animations);
-  console.info("Current animation-name:", modelViewer.animationName);
-  console.info(
-    "Bounding box tip: use modelViewer.getBoundingBoxCenter() to help place hotspots"
-  );
-  console.groupEnd();
-
-  // ③ Autoplay first animation if not already playing
   if (animations.length > 0) {
-    if (!modelViewer.animationName) {
-      modelViewer.animationName = animations[0];
-    }
+    if (!modelViewer.animationName) modelViewer.animationName = animations[0];
     modelViewer.play({ repetitions: Infinity });
-    console.info(`%c[হৃদপিণ্ড] Playing animation: "${modelViewer.animationName}"`, "color:#4a8fff");
-  } else {
-    console.warn(
-      "[হৃদপিণ্ড] No animations found in this GLB. " +
-      "The heart model will display as a static 3D model."
-    );
   }
 
   // ⑤ Fade interaction hint after a delay
@@ -353,31 +326,79 @@ modelViewer.addEventListener("error", (event) => {
     </div>`;
 });
 
-/* ─── Play / Pause Buttons ───────────────────────────────────── */
-playBtn.addEventListener("click", () => {
-  modelViewer.play({ repetitions: Infinity });
-  console.info("[হৃদপিণ্ড] Animation playing");
+/* ─── Play / Pause Toggle (in cam controls) ─────────────────── */
+let heartPlaying = true;
+btnPlayPause?.addEventListener("click", () => {
+  heartPlaying = !heartPlaying;
+  if (heartPlaying) modelViewer.play({ repetitions: Infinity });
+  else modelViewer.pause();
+  btnPlayPause.querySelector('.icon-pause').style.display = heartPlaying ? '' : 'none';
+  btnPlayPause.querySelector('.icon-play').style.display  = heartPlaying ? 'none' : '';
+  btnPlayPause.classList.toggle('active', !heartPlaying);
 });
 
-pauseBtn.addEventListener("click", () => {
-  modelViewer.pause();
-  console.info("[হৃদপিণ্ড] Animation paused");
+/* ─── Camera Controls ────────────────────────────────────────── */
+let heartAutoRotating = false;
+const ORBIT_STEP = 0.18;
+
+function orbitPan(dTheta, dPhi) {
+  const orbit = modelViewer.getCameraOrbit();
+  const phi   = Math.max(0.1, Math.min(Math.PI - 0.1, orbit.phi + dPhi));
+  modelViewer.cameraOrbit = `${orbit.theta + dTheta}rad ${phi}rad ${orbit.radius}m`;
+}
+
+document.getElementById('btnAutoRotate')?.addEventListener('click', function () {
+  heartAutoRotating = !heartAutoRotating;
+  if (heartAutoRotating) modelViewer.setAttribute('auto-rotate', '');
+  else modelViewer.removeAttribute('auto-rotate');
+  this.classList.toggle('active', heartAutoRotating);
 });
 
-/* ─── Debug Panel Toggle ─────────────────────────────────────── */
-debugToggle.addEventListener("click", () => {
-  const isOpen = debugToggle.getAttribute("aria-expanded") === "true";
-  debugToggle.setAttribute("aria-expanded", String(!isOpen));
+document.getElementById('btnResetCam')?.addEventListener('click', () => {
+  modelViewer.cameraOrbit  = '0deg 80deg auto';
+  modelViewer.fieldOfView  = 'auto';
+});
 
-  if (isOpen) {
-    debugContent.hidden = true;
-  } else {
-    debugContent.hidden = false;
-  }
+document.getElementById('btnPanUp')?.addEventListener('click',    () => orbitPan(0, -ORBIT_STEP));
+document.getElementById('btnPanDown')?.addEventListener('click',  () => orbitPan(0,  ORBIT_STEP));
+document.getElementById('btnPanLeft')?.addEventListener('click',  () => orbitPan(-ORBIT_STEP, 0));
+document.getElementById('btnPanRight')?.addEventListener('click', () => orbitPan( ORBIT_STEP, 0));
+
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.key === 'ArrowUp')    { e.preventDefault(); orbitPan(0, -ORBIT_STEP); }
+  if (e.key === 'ArrowDown')  { e.preventDefault(); orbitPan(0,  ORBIT_STEP); }
+  if (e.key === 'ArrowLeft')  { e.preventDefault(); orbitPan(-ORBIT_STEP, 0); }
+  if (e.key === 'ArrowRight') { e.preventDefault(); orbitPan( ORBIT_STEP, 0); }
 });
 
 /* ─── Initialise ─────────────────────────────────────────────── */
 buildHotspots();
+
+/* ─── Search Bar ─────────────────────────────────────────────── */
+import('./search.js').then(({ initSearchBar }) => {
+  const inputEl    = document.getElementById('searchInput');
+  const dropdownEl = document.getElementById('searchDropdown');
+  if (!inputEl || !dropdownEl) return;
+
+  const idx = annotations.map(ann => ({
+    name:       ann.labelEn,
+    bn:         ann.label,
+    sysKey:     'heart',
+    sysLabelBn: 'হৃদপিণ্ড',
+    sysColor:   '#E74C3C',
+    ann,
+  }));
+
+  initSearchBar({
+    inputEl,
+    dropdownEl,
+    onSelect: result => {
+      const btn = modelViewer.querySelector(`[slot="hotspot-${result.ann.id}"]`);
+      if (btn) openDetailPanel(result.ann, btn);
+    },
+  }).setIndex(idx);
+});
 
 /*
  *  QUICK REFERENCE — useful model-viewer console commands:
