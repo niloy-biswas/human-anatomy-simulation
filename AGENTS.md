@@ -1,115 +1,134 @@
-# AGENTS.md — Human Heart Simulation (Cursor Agent Context)
+# AGENTS.md — Human Anatomy Simulation
 
-This file is for future agents to quickly understand the repo context, what’s already built, what assets exist, and what is currently broken.
+Quick context for agents: what's built, how it works, what to avoid.
 
 ## Repo goal
 
-- **Short-term**: Host an educational 3D anatomy experience (Bangla + English UI) on Vercel.
-- **Pages**:
-  - `index.html`: **heart-only** viewer using `<model-viewer>`.
-  - `body.html`: **full-body** Z‑Anatomy viewer using **Three.js** with system toggles + click-to-inspect.
+Educational 3D anatomy (Bangla + English) hosted on Vercel.
+
+**Pages:**
+- `/` → `body.html`: full-body Z-Anatomy viewer (Three.js)
+- `/heart` → `index.html`: heart-only viewer (`<model-viewer>`)
+- `/body`, `/skeletal`, `/muscular`, `/visceral`, etc. → `body.html`
 
 ## How to run
-
-Run from the repo root (not `file://`):
 
 ```bash
 cd /Users/niloybiswas/Desktop/CodeRepository/human-heart-simulation
 npx --yes serve .
 ```
 
-Open:
+- `http://localhost:3000/` → full body
+- `http://localhost:3000/heart` → heart
 
-- `http://localhost:3000/` (heart)
-- `http://localhost:3000/body.html` (full body)
+Routing via `serve.json` (local) and `vercel.json` (production).
+
+## File map
+
+| File | Role |
+|------|------|
+| `body.html` | Full-body viewer layout |
+| `body.js` | Three.js viewer — all viewer logic |
+| `index.html` | Heart viewer layout |
+| `script.js` | Heart viewer logic (classic script, no modules) |
+| `search.js` | Shared ES module — typeahead search UI, framework-agnostic |
+| `style.css` | All styles — both pages share this |
+| `labels/` | Bengali label data, one file per anatomy system |
+| `assets/` | GLB models + nav images |
 
 ## Assets
 
-Folder: `assets/`
+- `assets/heart.glb` (~16 MB): heart model for `index.html`
+- `assets/z-anatomy-draco.glb` (~23 MB): Draco-compressed Z-Anatomy, used by `body.html`
+- `assets/z-anatomy.glb` (~155 MB): raw export — **git-ignored**, local only
+- `assets/heart.png`: heart icon for sidebar organ card
+- `assets/full-body_nav_logo.png`: body figure icon for nav link
 
-- `heart.glb` (~16 MB): heart model used by `index.html`.
-- `z-anatomy.glb` (~155 MB): raw Blender export (kept locally; **ignored by git**).
-- `z-anatomy-draco.glb` (~23 MB): Draco-compressed version used by `body.html`.
-  - SHA256 (local): `297558e0e0393c4f775cdec5c4b339504aa970591d5cfac98f9961daddd62352`
+## Labels system
 
-`.gitignore` currently ignores `assets/z-anatomy.glb`.
+`labels/` has 9 files matching the 9 anatomy system keys exactly:
 
-## Z-Anatomy GLB structure (verified from JSON chunk)
-
-- **Root scene nodes** include:
-  - `Skeletal system.g`, `Joints.g`, `Muscular system.g`, `Fasciae.g`,
-    `Arterial system.g`, `Venous system.g`, `Lymphoid organs.g`,
-    `Nervous system & Sense organs.g`, `Visceral systems.g`
-  - plus atlas/UI roots: `HOW TO ...`, `Reference planes.g`, etc.
-- Counts (from `assets/z-anatomy.glb`):
-  - **meshes**: 3390
-  - **nodes**: 7179
-  - **materials**: 171
-- Material extensions present:
-  - `KHR_materials_specular`, `KHR_materials_ior`, `KHR_materials_clearcoat`, `KHR_materials_anisotropy`
-
-This structure should allow toggling by root system groups.
-
-## What was implemented
-
-### Full-body viewer
-
-Files:
-
-- `body.html`: layout (sidebar toggles, canvas, tooltip, detail panel) + Three.js importmap.
-- `body.js`: Three.js viewer:
-  - `GLTFLoader` + `DRACOLoader`
-  - `OrbitControls`
-  - A system toggle list (`SYSTEMS`) based on root node names above
-  - Raycasting hover tooltip + click detail panel
-  - Filters to hide atlas clutter (reference planes/lines, “HOW TO…”, navigation text)
-  - Material replacement: forces `MeshLambertMaterial` for reliability (attempt to avoid “black PBR”)
-  - A **debug HUD** in the canvas (`#bvHud`) showing:
-    - canvas size
-    - visible mesh count
-    - renderer draw calls/triangles
-
-### Styling & hosting
-
-- `style.css`: added body-viewer styles (`.bv-*`) and HUD styles.
-- `vercel.json`: adds caching headers for `.glb` and CORP header.
-- `index.html`: added a link button to `body.html`.
-- `README.md`: includes run instructions + asset notes.
-
-## Current status — WORKING ✓
-
-Full-body viewer renders correctly. System toggles work. Skeleton, muscles, organs all show/hide per checkbox.
-
-## What was solved (key findings)
-
-### Root cause: Three.js sanitizes GLTF node names
-Three.js GLTFLoader’s `createUniqueName` runs `PropertyBinding.sanitizeNodeName` which converts
-spaces→underscores and strips non-word characters including dots. So GLTF node `”Skeletal system.g”`
-becomes a different string in the Three.js Object3D `.name`. All string-based matching silently failed.
-
-**Fix:** Use **positional indexing** into `root.children` instead of name matching:
-```js
-const SYSTEM_CHILD_INDICES = { skeletal:2, joints:3, muscular:4, fasciae:5, arterial:6, venous:7, lymphoid:8, nervous:9, visceral:10 };
 ```
-These positions are verified from the GLB JSON chunk (GLTF scene.nodes array order, which Three.js preserves).
+skeletal.js  joints.js   muscular.js  fasciae.js   arterial.js
+venous.js    lymphoid.js nervous.js   visceral.js
+```
 
-### Z-Anatomy GLB node structure
-Every group node (`.g` suffix) is **both** a Three.js Object3D AND has a mesh child with material `”Text”` or `”Text-2”`. These text meshes are 3D annotation labels (one per group, showing the group name). They must be made **transparent** (not `visible=false`) because they are also the visibility containers for anatomy children.
+`labels/index.js` merges all into `BN_LABELS` (flat object). Each entry:
+```js
+'Part name': { bn: 'বাংলা নাম', desc: 'বাংলা বিবরণ' }
+```
 
-In `replaceMaterialsWithLambert`: text material meshes → `MeshBasicMaterial({ transparent:true, opacity:0, depthWrite:false })` and `obj.raycast = () => {}`.
+`lookupLabel(name)` in `body.js` does exact lookup then falls back stripping trailing `l`/`r` (Three.js removes dots, so `joint.l` → `jointl`).
 
-### System mesh registry
-`systemMeshes` (key → `THREE.Mesh[]`) is built at load time by walking each anatomy mesh’s parent chain to find the system root. `toggleSystem` sets `m.visible` directly on these meshes — no parent-propagation dependency.
+## Z-Anatomy GLB — critical facts
 
-### Material replacement
-Z-Anatomy exports PBR materials with `KHR_materials_ior`, `KHR_materials_specular`, etc. These render black in WebGL. All anatomy meshes get replaced with `MeshLambertMaterial` (color `0xdccab8`, `DoubleSide`, ambient-lit). Text annotation meshes get transparent `MeshBasicMaterial` instead.
+### Scene node structure
+Scene has **21 top-level nodes**. System roots are at positions 2–10 in `gltf.scene.children` (= `scene.nodes` array order, which Three.js preserves):
 
-## Known remaining items
+```js
+const SYSTEM_CHILD_INDICES = {
+  skeletal:2, joints:3, muscular:4, fasciae:5,
+  arterial:6, venous:7, lymphoid:8, nervous:9, visceral:10
+};
+```
 
-- Text annotation labels (`”VISCERAL SYSTEMS”` etc.) may still show faintly — need to verify transparent fix works fully
-- No click-to-inspect (raycasting) tested yet since toggle fix
-- Console debug logs still present in `body.js` — remove before production
+**Do not match by name** — Three.js sanitizes node names (spaces→underscores, strips dots).
 
-## Licensing reminder
+### Text annotation meshes — two types
 
-Z‑Anatomy models are **CC BY‑SA 4.0** (keep attribution visible in the product).
+1. **Part-level labels**: material named `"Text"` or `"Text-2"` → detected by `/^text/i` regex
+2. **Category group nodes** (`.g` suffix): have **no GLB material** (primitive.material = undefined) → Three.js gives default nameless material → detected by `/\.g$/i` test on `obj.name`
+
+Both are made transparent in `replaceMaterialsWithLambert`:
+```js
+obj.material = new THREE.MeshBasicMaterial({ transparent:true, opacity:0, depthWrite:false });
+obj.raycast  = () => {};
+obj.userData.isTextLabel = true;
+```
+**Never set `visible=false`** on these — they are also visibility containers for anatomy children.
+
+### systemMeshes registry
+Built at load time by walking each mesh's parent chain. `toggleSystem` sets `m.visible` directly on flat mesh arrays — bypasses parent-propagation.
+
+### Material colors
+Z-Anatomy exports PBR with `KHR_materials_ior/specular/clearcoat` — renders black in WebGL. All anatomy meshes replaced with `MeshLambertMaterial`. Neutral/achromatic materials get overridden with system color; vivid/dark materials (organs, brain, etc.) keep their original color.
+
+## Search system
+
+`search.js` exports `initSearchBar({ inputEl, dropdownEl, onSelect })`.
+
+**Body viewer** (`body.js`): index built after model loads from `systemMeshes`. Each entry: `{ name, bn, sysKey, sysLabelBn, sysColor, meshes[] }`. On select: isolates target system (hides all others + updates checkboxes), highlights all meshes in group, animates camera to bounding box, opens detail panel.
+
+**Heart viewer** (`script.js`): loaded via dynamic `import('./search.js')` (works from classic scripts). Index built from `annotations` array. On select: calls `openDetailPanel(ann, btn)`.
+
+Both pages: search bar in desktop nav (right-aligned, `margin-left:auto`). Mobile: search icon in header opens overlay. Dropdown: system color dot + Bengali name + English name + system badge.
+
+## Camera controls (`bv-cam-controls`)
+
+Both pages share the same HTML panel and `.bv-cam-controls` CSS. Sits absolute bottom-right of canvas/viewer.
+
+- **Auto-rotate**: Three.js `controls.autoRotate` / model-viewer `auto-rotate` attribute
+- **Reset**: animates back to `defaultCamTarget` / `defaultCamPos`
+- **D-pad**: `pan(dx, dy)` using camera-local right+up vectors (body) / `orbitPan(dTheta, dPhi)` via `getCameraOrbit()` (heart)
+- **Keyboard**: arrow keys mapped to pan/orbit; skipped when focus is in `<input>`
+- **Mobile**: d-pad + its divider hidden via `.bv-cam-divider--dpad, .bv-cam-dpad { display:none }` at ≤767px
+
+Heart page: play/pause toggle also in the panel (was separate debug panel — removed).
+
+## Sidebar (body.html only)
+
+- System toggle list (injected by `buildSidebar()`)
+- **Organ section** (`<details class="bv-organ-section" open>`): collapsible, chevron open=↓ closed=↑. Links to other organ viewers via route paths (`/heart`).
+- Show all / Hide all footer buttons
+
+## Known issues / watch-outs
+
+- `script.js` is a **classic script** (not module). To use ES modules from it, use dynamic `import()`.
+- Model-viewer's `cameraOrbit` uses radians when set via JS (`getCameraOrbit()` returns radians).
+- The `defaultCamPos` / `defaultCamTarget` (body viewer) are saved after model load — do not reset them.
+- Camera framing uses 58% of bounding box height as orbit target (avoids arm-span bias from arms-out skeleton pose).
+- `cleanName()` strips Z-Anatomy suffixes (`.e`, `.g`, `.s`, `.t`, `.j`, `.l`, `.r`) and Three.js dedup suffixes (`_1`, `_2`), then converts underscores back to spaces.
+
+## Licensing
+
+Z-Anatomy: **CC BY-SA 4.0** — attribution must stay visible in the product.
