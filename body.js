@@ -1,6 +1,6 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- *  মানব শরীর — Full Body 3D Anatomy Viewer  |  body.js
+ *  মানব শরীর - Full Body 3D Anatomy Viewer  |  body.js
  *  Uses Three.js r168 + GLTFLoader + OrbitControls
  *  Model: Z-Anatomy (CC BY-SA 4.0)
  * ═══════════════════════════════════════════════════════════════
@@ -97,6 +97,12 @@ const detailTextEn   = document.getElementById('detailTextEn');
 const detailBadge    = document.getElementById('detailSystemBadge');
 const mobileSysBtn   = document.getElementById('bvMobileSysBtn');
 const sidebar        = document.getElementById('bvSidebar');
+const btnAutoRotate  = document.getElementById('btnAutoRotate');
+const btnResetCam    = document.getElementById('btnResetCam');
+const btnPanUp       = document.getElementById('btnPanUp');
+const btnPanDown     = document.getElementById('btnPanDown');
+const btnPanLeft     = document.getElementById('btnPanLeft');
+const btnPanRight    = document.getElementById('btnPanRight');
 
 /* ─── Three.js Scene Setup ────────────────────────────────────── */
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
@@ -149,6 +155,9 @@ const raycaster    = new THREE.Raycaster();
 raycaster.params.Mesh.threshold = 0;
 const pointer      = new THREE.Vector2();
 let   modelLoaded  = false;
+let   autoRotating = false;
+const defaultCamPos    = new THREE.Vector3();
+const defaultCamTarget = new THREE.Vector3();
 
 /* ─── Highlight Colors ────────────────────────────────────────── */
 // Color-swap approach: change material.color directly (emissive fails on bright white bones).
@@ -252,6 +261,7 @@ function replaceMaterialsWithLambert(root) {
     if (oldList.some(m => m && Z_ANATOMY_TEXT_MAT_NAMES.has(m.name))) {
       obj.material = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false });
       obj.raycast = () => {};
+      obj.userData.isTextLabel = true;
       return;
     }
 
@@ -311,7 +321,7 @@ function onModelLoaded(gltf) {
   const anatomyBounds = new THREE.Box3();
   let anatomyMeshCount = 0;
   root.traverse((o) => {
-    if (!o.isMesh || isDecorationMesh(o)) return;
+    if (!o.isMesh || isDecorationMesh(o) || o.userData.isTextLabel) return;
     anatomyMeshCount++;
     anatomyBounds.expandByObject(o);
   });
@@ -404,6 +414,7 @@ function onModelLoaded(gltf) {
   let frameCount = 0;
   root.traverse((o) => {
     if (!o.isMesh || !isWorldVisible(o) || isDecorationMesh(o)) return;
+    if (o.userData.isTextLabel) return;
     frameCount++;
     box1.expandByObject(o);
   });
@@ -413,13 +424,19 @@ function onModelLoaded(gltf) {
   const center1 = box1.getCenter(new THREE.Vector3());
   const maxDim1 = Math.max(size1.x, size1.y, size1.z) || 1;
 
-  controls.target.copy(center1);
+  // Use 58% up from box bottom as orbit target — avoids arm-span bias on geometric center
+  const orbitY = box1.min.y + size1.y * 0.58;
+  controls.target.set(center1.x, orbitY, center1.z);
   const dist = maxDim1 * 1.6;
   camera.near = Math.max(0.001, dist / 200);
   camera.far  = Math.max(50, dist * 200);
   camera.updateProjectionMatrix();
-  camera.position.copy(center1).add(new THREE.Vector3(0, maxDim1 * 0.15, dist));
+  camera.position.set(center1.x, orbitY, center1.z + dist);
   controls.update();
+
+  // Save default view for reset button
+  defaultCamTarget.copy(controls.target);
+  defaultCamPos.copy(camera.position);
 
   // URL-based system selection: /skeletal, /muscular, /visceral, etc.
   const urlKey = window.location.pathname.replace(/^\//, '').toLowerCase();
@@ -508,6 +525,38 @@ btnHideAll.addEventListener('click', () => {
   SYSTEMS.forEach(sys => toggleSystem(sys.key, false));
   systemList.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = false);
 });
+
+/* ─── Camera Control Buttons ──────────────────────────────────── */
+btnResetCam.addEventListener('click', () => {
+  if (!modelLoaded) return;
+  animateCameraTo(defaultCamTarget.clone(), defaultCamPos.clone(), 500);
+});
+
+btnAutoRotate.addEventListener('click', () => {
+  autoRotating = !autoRotating;
+  controls.autoRotate      = autoRotating;
+  controls.autoRotateSpeed = 1.2;
+  btnAutoRotate.classList.toggle('active', autoRotating);
+});
+
+const PAN_STEP = 0.08;
+function pan(dx, dy) {
+  // Pan in camera-local space
+  const right = new THREE.Vector3();
+  const up    = new THREE.Vector3();
+  camera.getWorldDirection(up); // temp
+  right.crossVectors(camera.getWorldDirection(new THREE.Vector3()), camera.up).normalize();
+  up.set(0, 1, 0);
+  const delta = right.multiplyScalar(dx).add(up.multiplyScalar(dy));
+  controls.target.add(delta);
+  camera.position.add(delta);
+  controls.update();
+}
+
+btnPanUp.addEventListener('click',    () => pan(0,  PAN_STEP));
+btnPanDown.addEventListener('click',  () => pan(0, -PAN_STEP));
+btnPanLeft.addEventListener('click',  () => pan(-PAN_STEP, 0));
+btnPanRight.addEventListener('click', () => pan( PAN_STEP, 0));
 
 /* ─── Mobile Sidebar Toggle ───────────────────────────────────── */
 function closeMobileSidebar() {

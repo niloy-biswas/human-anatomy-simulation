@@ -805,6 +805,24 @@ model-viewer::part(default-progress-bar) { display: none; }
   overflow: hidden;
 }
 
+.nav-link-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: var(--r-full);
+  border: 1.5px solid var(--c-outline);
+  background: transparent;
+  color: var(--c-text-2);
+  font-family: var(--f-en);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  white-space: nowrap;
+}
+
 .body-viewer-page .nav-link-btn {
   display: flex;
   align-items: center;
@@ -1049,6 +1067,60 @@ model-viewer::part(default-progress-bar) { display: none; }
 }
 
 /* ─── Debug HUD ──────────────────────────────────────────────── */
+/* ─── Camera Controls ─────────────────────────────────────────── */
+.bv-cam-controls {
+  position: absolute;
+  bottom: 24px;
+  right: 16px;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.bv-cam-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(13,20,32,0.75);
+  backdrop-filter: blur(8px);
+  color: #9CA3AF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.bv-cam-btn:hover {
+  background: rgba(28,171,85,0.18);
+  border-color: rgba(28,171,85,0.5);
+  color: #1CAB55;
+}
+.bv-cam-btn.active {
+  background: rgba(28,171,85,0.25);
+  border-color: #1CAB55;
+  color: #1CAB55;
+}
+
+.bv-cam-divider {
+  width: 20px;
+  height: 1px;
+  background: rgba(255,255,255,0.1);
+}
+
+.bv-cam-dpad {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.bv-cam-dpad-mid {
+  display: flex;
+  gap: 3px;
+}
+
 .bv-hud {
   position: absolute;
   top: 12px;

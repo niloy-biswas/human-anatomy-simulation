@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>মানব শরীর — 3D অ্যানাটমি · 10 Minute School</title>
+  <title>মানব শরীর — 3D অ্যানাটমি</title>
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -96,8 +96,8 @@
       </div>
 
       <div class="bv-sidebar-footer">
-        <button class="bv-btn-all" id="btnShowAll">সব দেখান</button>
-        <button class="bv-btn-none" id="btnHideAll">সব লুকান</button>
+        <button class="bv-btn-all" id="btnShowAll">Show all</button>
+        <button class="bv-btn-none" id="btnHideAll">Hide all</button>
       </div>
     </aside>
 
@@ -141,6 +141,49 @@
 
       <!-- Hover tooltip -->
       <div class="bv-tooltip" id="bvTooltip" hidden></div>
+
+      <!-- Camera controls -->
+      <div class="bv-cam-controls" id="bvCamControls">
+        <!-- Rotate toggle -->
+        <button class="bv-cam-btn bv-cam-rotate" id="btnAutoRotate" title="Auto Rotate">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M2.5 8C2.5 5 5 2.5 8 2.5C10.2 2.5 12.1 3.8 13 5.7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M13.5 8C13.5 11 11 13.5 8 13.5C5.8 13.5 3.9 12.2 3 10.3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M13 3.5L13 6H10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M3 12.5L3 10H5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+
+        <div class="bv-cam-divider"></div>
+
+        <!-- Center / reset -->
+        <button class="bv-cam-btn" id="btnResetCam" title="Reset View">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M8 1.5V3M8 13V14.5M1.5 8H3M13 8H14.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
+
+        <div class="bv-cam-divider"></div>
+
+        <!-- D-pad -->
+        <div class="bv-cam-dpad">
+          <button class="bv-cam-btn bv-cam-up"    id="btnPanUp"    title="Up">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 9.5V2.5M2.5 6L6 2.5L9.5 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="bv-cam-dpad-mid">
+            <button class="bv-cam-btn bv-cam-left"  id="btnPanLeft"  title="Left">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M9.5 6H2.5M6 9.5L2.5 6L6 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button class="bv-cam-btn bv-cam-right" id="btnPanRight" title="Right">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 6H9.5M6 2.5L9.5 6L6 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+          <button class="bv-cam-btn bv-cam-down"  id="btnPanDown"  title="Down">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2.5V9.5M9.5 6L6 9.5L2.5 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
 
     </main>
 
