@@ -11,6 +11,7 @@ import { GLTFLoader }    from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader }   from 'three/addons/loaders/DRACOLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { BN_LABELS }     from './labels/index.js';
+import { initSearchBar }  from './search.js';
 
 /* ─── Anatomy Systems Config ──────────────────────────────────── */
 const SYSTEMS = [
@@ -227,10 +228,10 @@ function hideZAnatomyUiChrome(object3d) {
   });
 }
 
-/** Z-Anatomy text annotation material names — every group node has a "Text" mesh attached as its own geometry.
+/** Z-Anatomy text annotation material name pattern — matches "Text", "Text-2", "Text 2", etc.
  *  These nodes are ALSO the visibility containers for anatomy children, so we must NOT hide them
  *  (visible=false would hide all anatomy children too). Instead we make them transparent. */
-const Z_ANATOMY_TEXT_MAT_NAMES = new Set(['Text', 'Text-2']);
+const Z_ANATOMY_TEXT_MAT_RE = /^text/i;
 
 function isDecorationMesh(mesh) {
   const n = (mesh.name || '').trim();
@@ -258,7 +259,9 @@ function replaceMaterialsWithLambert(root) {
     // Text annotation nodes are both the text-label geometry AND the visibility container
     // for anatomy children. Making them visible=false would hide all children too.
     // Instead make them fully transparent so text disappears but children still render.
-    if (oldList.some(m => m && Z_ANATOMY_TEXT_MAT_NAMES.has(m.name))) {
+    const isTextMat  = oldList.some(m => m && Z_ANATOMY_TEXT_MAT_RE.test(m.name));
+    const isGroupNode = /\.g$/i.test(obj.name || ''); // Z-Anatomy category group nodes — no material in GLB → default nameless material
+    if (isTextMat || isGroupNode) {
       obj.material = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false });
       obj.raycast = () => {};
       obj.userData.isTextLabel = true;
@@ -447,6 +450,22 @@ function onModelLoaded(gltf) {
 
   buildSidebar();
 
+  // Init anatomy search after systemMeshes + sidebar are ready
+  const _searchIdx = buildSearchIndex();
+  initSearchBar({
+    inputEl:    document.getElementById('searchInput'),
+    dropdownEl: document.getElementById('searchDropdown'),
+    onSelect:   handleSearchSelect,
+  }).setIndex(_searchIdx);
+  const _mobileInput = document.getElementById('searchInputMobile');
+  if (_mobileInput) {
+    initSearchBar({
+      inputEl:    _mobileInput,
+      dropdownEl: document.getElementById('searchDropdownMobile'),
+      onSelect:   handleSearchSelect,
+    }).setIndex(_searchIdx);
+  }
+
   loadingEl.style.opacity = '0';
   setTimeout(() => { loadingEl.style.display = 'none'; }, 500);
   setTimeout(() => hintEl?.classList.add('fade-out'), 5000);
@@ -558,6 +577,14 @@ btnPanDown.addEventListener('click',  () => pan(0, -PAN_STEP));
 btnPanLeft.addEventListener('click',  () => pan(-PAN_STEP, 0));
 btnPanRight.addEventListener('click', () => pan( PAN_STEP, 0));
 
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.key === 'ArrowUp')    { e.preventDefault(); pan(0,  PAN_STEP); }
+  if (e.key === 'ArrowDown')  { e.preventDefault(); pan(0, -PAN_STEP); }
+  if (e.key === 'ArrowLeft')  { e.preventDefault(); pan(-PAN_STEP, 0); }
+  if (e.key === 'ArrowRight') { e.preventDefault(); pan( PAN_STEP, 0); }
+});
+
 /* ─── Mobile Sidebar Toggle ───────────────────────────────────── */
 function closeMobileSidebar() {
   sidebar.classList.remove('bv-sidebar--open');
@@ -575,6 +602,17 @@ document.addEventListener('click', (e) => {
   if (!sidebar.classList.contains('bv-sidebar--open')) return;
   if (sidebar.contains(e.target) || mobileSysBtn.contains(e.target)) return;
   closeMobileSidebar();
+});
+
+/* ─── Mobile Search Overlay ───────────────────────────────────── */
+const mobileSearchOverlay = document.getElementById('mobileSearchOverlay');
+document.getElementById('mobileSearchBtn')?.addEventListener('click', () => {
+  if (!mobileSearchOverlay) return;
+  mobileSearchOverlay.hidden = !mobileSearchOverlay.hidden;
+  if (!mobileSearchOverlay.hidden) document.getElementById('searchInputMobile')?.focus();
+});
+document.getElementById('mobileSearchClose')?.addEventListener('click', () => {
+  if (mobileSearchOverlay) mobileSearchOverlay.hidden = true;
 });
 document.addEventListener('touchstart', (e) => {
   if (!sidebar.classList.contains('bv-sidebar--open')) return;
@@ -816,6 +854,67 @@ function animateCameraTo(newTarget, newCamPos, durationMs) {
   }
 
   requestAnimationFrame(step);
+}
+
+/* ─── Search ──────────────────────────────────────────────────── */
+function buildSearchIndex() {
+  const idx = [];
+  for (const sys of SYSTEMS) {
+    const seen = new Map();
+    for (const m of (systemMeshes[sys.key] ?? [])) {
+      if (m.userData.isTextLabel) continue;
+      const name = cleanName(m.name);
+      if (!name) continue;
+      const k = name.toLowerCase();
+      if (!seen.has(k)) {
+        const label = lookupLabel(name);
+        seen.set(k, {
+          name, bn: label?.bn ?? null,
+          sysKey: sys.key, sysLabelBn: sys.labelBn, sysColor: sys.color,
+          meshes: [],
+        });
+      }
+      seen.get(k).meshes.push(m);
+    }
+    idx.push(...seen.values());
+  }
+  return idx;
+}
+
+function handleSearchSelect(result) {
+  // Reset any existing selection
+  if (selectedMesh) { restoreHighlight(selectedMesh); selectedMesh = null; }
+  detailPanel.classList.remove('is-open');
+  detailBackdrop.classList.remove('is-visible');
+  detailPanel.setAttribute('aria-hidden', 'true');
+  detailPanel.hidden = true;
+  detailBackdrop.hidden = true;
+
+  // Show only the target system, hide all others
+  SYSTEMS.forEach(s => toggleSystem(s.key, s.key === result.sysKey));
+  const checkboxes = [...systemList.querySelectorAll('input[type=checkbox]')];
+  SYSTEMS.forEach((s, i) => { if (checkboxes[i]) checkboxes[i].checked = s.key === result.sysKey; });
+
+  if (!result.meshes.length) return;
+  const first = result.meshes[0];
+
+  result.meshes.forEach(m => setHighlight(m, SELECTED_COLOR));
+  selectedMesh = first;
+
+  // Focus camera on bounding box of all result meshes
+  const box = new THREE.Box3();
+  result.meshes.forEach(m => box.expandByObject(m));
+  if (!box.isEmpty()) {
+    const center = box.getCenter(new THREE.Vector3());
+    const size   = box.getSize(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z, 0.05);
+    const fovRad = camera.fov * (Math.PI / 180);
+    const dist   = Math.max((maxDim / 2) / Math.tan(fovRad / 2) * 2.2, controls.minDistance * 1.5);
+    const dir    = camera.position.clone().sub(controls.target).normalize();
+    animateCameraTo(center, center.clone().add(dir.multiplyScalar(dist)), 500);
+  }
+
+  openDetailPanel(first);
 }
 
 /* ─── Resize Handler ──────────────────────────────────────────── */
