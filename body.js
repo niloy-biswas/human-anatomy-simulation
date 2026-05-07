@@ -684,7 +684,7 @@ function restoreHighlight(mesh) {
 function showTooltip(mesh, x, y) {
   const name = cleanName(mesh.name || mesh.parent?.name || '');
   if (!name) return;
-  const bn = BN_LABELS[name];
+  const bn = lookupLabel(name);
   tooltipEl.textContent = bn ? `${bn.bn} · ${name}` : name;
   tooltipEl.style.left   = (x + 14) + 'px';
   tooltipEl.style.top    = (y - 10) + 'px';
@@ -700,7 +700,7 @@ function openDetailPanel(mesh) {
   let name = cleanName(mesh.name || '');
   if (!name && mesh.parent) name = cleanName(mesh.parent.name || '');
 
-  const data  = BN_LABELS[name];
+  const data  = lookupLabel(name);
   const sys   = findSystemForMesh(mesh);
 
   detailTitleBn.textContent = data ? data.bn : name;
@@ -758,6 +758,12 @@ function cleanName(name) {
     .replace(/_\d+$/, '')                            // Three.js dedup suffix (_1, _2 …)
     .replace(/_/g, ' ')                              // reverse Three.js space→underscore sanitization
     .trim();
+}
+
+// Three.js removes dots before suffixes (joint.l → jointl).
+// Fallback: if no exact match, strip trailing l/r and retry.
+function lookupLabel(name) {
+  return BN_LABELS[name] ?? BN_LABELS[name.replace(/[lr]$/, '').trimEnd()] ?? null;
 }
 
 function findSystemForMesh(mesh) {
