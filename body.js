@@ -1,6 +1,6 @@
 /**
  * ═══════════════════════════════════════════════════════════════
- *  মানব শরীর — Full Body 3D Anatomy Viewer  |  body.js
+ *  মানব শরীর - Full Body 3D Anatomy Viewer  |  body.js
  *  Uses Three.js r168 + GLTFLoader + OrbitControls
  *  Model: Z-Anatomy (CC BY-SA 4.0)
  * ═══════════════════════════════════════════════════════════════
@@ -97,6 +97,12 @@ const detailTextEn   = document.getElementById('detailTextEn');
 const detailBadge    = document.getElementById('detailSystemBadge');
 const mobileSysBtn   = document.getElementById('bvMobileSysBtn');
 const sidebar        = document.getElementById('bvSidebar');
+const btnAutoRotate  = document.getElementById('btnAutoRotate');
+const btnResetCam    = document.getElementById('btnResetCam');
+const btnPanUp       = document.getElementById('btnPanUp');
+const btnPanDown     = document.getElementById('btnPanDown');
+const btnPanLeft     = document.getElementById('btnPanLeft');
+const btnPanRight    = document.getElementById('btnPanRight');
 
 /* ─── Three.js Scene Setup ────────────────────────────────────── */
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
@@ -149,6 +155,9 @@ const raycaster    = new THREE.Raycaster();
 raycaster.params.Mesh.threshold = 0;
 const pointer      = new THREE.Vector2();
 let   modelLoaded  = false;
+let   autoRotating = false;
+const defaultCamPos    = new THREE.Vector3();
+const defaultCamTarget = new THREE.Vector3();
 
 /* ─── Highlight Colors ────────────────────────────────────────── */
 // Color-swap approach: change material.color directly (emissive fails on bright white bones).
@@ -421,6 +430,10 @@ function onModelLoaded(gltf) {
   camera.position.copy(center1).add(new THREE.Vector3(0, maxDim1 * 0.15, dist));
   controls.update();
 
+  // Save default view for reset button
+  defaultCamTarget.copy(controls.target);
+  defaultCamPos.copy(camera.position);
+
   // URL-based system selection: /skeletal, /muscular, /visceral, etc.
   const urlKey = window.location.pathname.replace(/^\//, '').toLowerCase();
   if (SYSTEMS.some(s => s.key === urlKey)) {
@@ -508,6 +521,38 @@ btnHideAll.addEventListener('click', () => {
   SYSTEMS.forEach(sys => toggleSystem(sys.key, false));
   systemList.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = false);
 });
+
+/* ─── Camera Control Buttons ──────────────────────────────────── */
+btnResetCam.addEventListener('click', () => {
+  if (!modelLoaded) return;
+  animateCameraTo(defaultCamTarget.clone(), defaultCamPos.clone(), 500);
+});
+
+btnAutoRotate.addEventListener('click', () => {
+  autoRotating = !autoRotating;
+  controls.autoRotate      = autoRotating;
+  controls.autoRotateSpeed = 1.2;
+  btnAutoRotate.classList.toggle('active', autoRotating);
+});
+
+const PAN_STEP = 0.08;
+function pan(dx, dy) {
+  // Pan in camera-local space
+  const right = new THREE.Vector3();
+  const up    = new THREE.Vector3();
+  camera.getWorldDirection(up); // temp
+  right.crossVectors(camera.getWorldDirection(new THREE.Vector3()), camera.up).normalize();
+  up.set(0, 1, 0);
+  const delta = right.multiplyScalar(dx).add(up.multiplyScalar(dy));
+  controls.target.add(delta);
+  camera.position.add(delta);
+  controls.update();
+}
+
+btnPanUp.addEventListener('click',    () => pan(0,  PAN_STEP));
+btnPanDown.addEventListener('click',  () => pan(0, -PAN_STEP));
+btnPanLeft.addEventListener('click',  () => pan(-PAN_STEP, 0));
+btnPanRight.addEventListener('click', () => pan( PAN_STEP, 0));
 
 /* ─── Mobile Sidebar Toggle ───────────────────────────────────── */
 function closeMobileSidebar() {
