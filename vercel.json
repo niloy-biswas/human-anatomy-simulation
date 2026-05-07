@@ -1,5 +1,6 @@
 {
   "rewrites": [
+    { "source": "/",         "destination": "/body.html" },
     { "source": "/heart",    "destination": "/index.html" },
     { "source": "/body",     "destination": "/body.html" },
     { "source": "/skeletal", "destination": "/body.html" },
