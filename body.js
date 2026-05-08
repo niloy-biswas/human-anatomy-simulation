@@ -15,8 +15,8 @@ import { initSearchBar }  from './search.js';
 
 /* ─── Anatomy Systems Config ──────────────────────────────────── */
 const SYSTEMS = [
-  { key: 'skeletal', labelBn: 'অস্থিতন্ত্র',  labelEn: 'Skeletal System',  color: '#D4C5A9', visible: true  },
-  { key: 'joints',   labelBn: 'সন্ধি',         labelEn: 'Joints',           color: '#B8C5D6', visible: false },
+  { key: 'skeletal', labelBn: 'কঙ্কালতন্ত্র',  labelEn: 'Skeletal System',  color: '#D4C5A9', visible: true  },
+  { key: 'joints',   labelBn: 'সন্ধিসমূহ',   labelEn: 'Joints',           color: '#B8C5D6', visible: false },
   { key: 'muscular', labelBn: 'পেশীতন্ত্র',   labelEn: 'Muscular System',  color: '#C0392B', visible: false },
   { key: 'fasciae',  labelBn: 'ফ্যাসিয়া',    labelEn: 'Fasciae',          color: '#E8C9A0', visible: false },
   { key: 'arterial', labelBn: 'ধমনীতন্ত্র',  labelEn: 'Arterial System',  color: '#E74C3C', visible: false },
@@ -882,6 +882,13 @@ function buildSearchIndex() {
 }
 
 function handleSearchSelect(result) {
+  // Close mobile search overlay and clear input
+  if (mobileSearchOverlay && !mobileSearchOverlay.hidden) {
+    mobileSearchOverlay.hidden = true;
+    const mobileInput = document.getElementById('searchInputMobile');
+    if (mobileInput) mobileInput.value = '';
+  }
+
   // Reset any existing selection
   if (selectedMesh) { restoreHighlight(selectedMesh); selectedMesh = null; }
   detailPanel.classList.remove('is-open');
