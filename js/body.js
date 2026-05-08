@@ -10,7 +10,7 @@ import * as THREE from 'three';
 import { GLTFLoader }    from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader }   from 'three/addons/loaders/DRACOLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { BN_LABELS }     from './labels/index.js';
+import { BN_LABELS }     from '../labels/index.js';
 import { initSearchBar }  from './search.js';
 
 /* ─── Anatomy Systems Config ──────────────────────────────────── */
@@ -178,8 +178,8 @@ const loader = new GLTFLoader();
 loader.setDRACOLoader(dracoLoader);
 
 /* Try Draco-compressed first, fall back to original */
-const MODEL_URL_DRACO = '../assets/models/z-anatomy-draco.glb';
-const MODEL_URL_RAW   = '../assets/models/z-anatomy.glb';
+const MODEL_URL_DRACO = '/assets/models/z-anatomy-draco.glb';
+const MODEL_URL_RAW   = '/assets/models/z-anatomy.glb';
 
 function loadModel(url) {
   loader.load(

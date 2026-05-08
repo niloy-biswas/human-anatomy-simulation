@@ -28,21 +28,23 @@ Routing via `serve.json` (local) and `vercel.json` (production).
 | File | Role |
 |------|------|
 | `body.html` | Full-body viewer layout |
-| `body.js` | Three.js viewer — all viewer logic |
 | `index.html` | Heart viewer layout |
-| `script.js` | Heart viewer logic (classic script, no modules) |
-| `search.js` | Shared ES module — typeahead search UI, framework-agnostic |
-| `style.css` | All styles — both pages share this |
+| `js/body.js` | Three.js viewer — all viewer logic |
+| `js/heart.js` | Heart viewer logic (classic script, no modules) |
+| `js/search.js` | Shared ES module — typeahead search UI, framework-agnostic |
+| `css/style.css` | All styles — both pages share this |
 | `labels/` | Bengali label data, one file per anatomy system |
-| `assets/` | GLB models + nav images |
+| `assets/models/` | GLB model files |
+| `assets/images/` | PNG nav/UI images |
+| `tools/extraction.html` | Dev utility — Sketchfab annotation extractor |
 
 ## Assets
 
-- `assets/heart.glb` (~16 MB): heart model for `index.html`
-- `assets/z-anatomy-draco.glb` (~23 MB): Draco-compressed Z-Anatomy, used by `body.html`
-- `assets/z-anatomy.glb` (~155 MB): raw export — **git-ignored**, local only
-- `assets/heart.png`: heart icon for sidebar organ card
-- `assets/full-body_nav_logo.png`: body figure icon for nav link
+- `assets/models/heart.glb` (~16 MB): heart model for `index.html`
+- `assets/models/z-anatomy-draco.glb` (~23 MB): Draco-compressed Z-Anatomy, used by `body.html`
+- `assets/models/z-anatomy.glb` (~155 MB): raw export — **git-ignored**, local only
+- `assets/images/heart.png`: heart icon for sidebar organ card
+- `assets/images/full-body-nav-logo.png`: body figure icon for nav link
 
 ## Labels system
 
@@ -58,7 +60,7 @@ venous.js    lymphoid.js nervous.js   visceral.js
 'Part name': { bn: 'বাংলা নাম', desc: 'বাংলা বিবরণ' }
 ```
 
-`lookupLabel(name)` in `body.js` does exact lookup then falls back stripping trailing `l`/`r` (Three.js removes dots, so `joint.l` → `jointl`).
+`lookupLabel(name)` in `js/body.js` does exact lookup then falls back stripping trailing `l`/`r` (Three.js removes dots, so `joint.l` → `jointl`).
 
 ## Z-Anatomy GLB — critical facts
 
@@ -97,9 +99,9 @@ Z-Anatomy exports PBR with `KHR_materials_ior/specular/clearcoat` — renders bl
 
 `search.js` exports `initSearchBar({ inputEl, dropdownEl, onSelect })`.
 
-**Body viewer** (`body.js`): index built after model loads from `systemMeshes`. Each entry: `{ name, bn, sysKey, sysLabelBn, sysColor, meshes[] }`. On select: isolates target system (hides all others + updates checkboxes), highlights all meshes in group, animates camera to bounding box, opens detail panel.
+**Body viewer** (`js/body.js`): index built after model loads from `systemMeshes`. Each entry: `{ name, bn, sysKey, sysLabelBn, sysColor, meshes[] }`. On select: isolates target system (hides all others + updates checkboxes), highlights all meshes in group, animates camera to bounding box, opens detail panel.
 
-**Heart viewer** (`script.js`): loaded via dynamic `import('./search.js')` (works from classic scripts). Index built from `annotations` array. On select: calls `openDetailPanel(ann, btn)`.
+**Heart viewer** (`js/heart.js`): loaded via dynamic `import('./search.js')` (works from classic scripts). Index built from `annotations` array. On select: calls `openDetailPanel(ann, btn)`.
 
 Both pages: search bar in desktop nav (right-aligned, `margin-left:auto`). Mobile: search icon in header opens overlay. Dropdown: system color dot + Bengali name + English name + system badge.
 
@@ -123,7 +125,8 @@ Heart page: play/pause toggle also in the panel (was separate debug panel — re
 
 ## Known issues / watch-outs
 
-- `script.js` is a **classic script** (not module). To use ES modules from it, use dynamic `import()`.
+- `js/heart.js` is a **classic script** (not module). To use ES modules from it, use dynamic `import()`.
+- `js/body.js` imports labels via `'../labels/index.js'` and search via `'./search.js'` — both relative to the JS file (ES module resolution). Three.js `loader.load()` paths use server-root-absolute `/assets/models/...` to avoid fetch vs. module URL ambiguity.
 - Model-viewer's `cameraOrbit` uses radians when set via JS (`getCameraOrbit()` returns radians).
 - The `defaultCamPos` / `defaultCamTarget` (body viewer) are saved after model load — do not reset them.
 - Camera framing uses 58% of bounding box height as orbit target (avoids arm-span bias from arms-out skeleton pose).
