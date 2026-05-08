@@ -178,8 +178,8 @@ const loader = new GLTFLoader();
 loader.setDRACOLoader(dracoLoader);
 
 /* Try Draco-compressed first, fall back to original */
-const MODEL_URL_DRACO = './assets/z-anatomy-draco.glb';
-const MODEL_URL_RAW   = './assets/z-anatomy.glb';
+const MODEL_URL_DRACO = '../assets/models/z-anatomy-draco.glb';
+const MODEL_URL_RAW   = '../assets/models/z-anatomy.glb';
 
 function loadModel(url) {
   loader.load(
@@ -481,7 +481,7 @@ function showLoadError() {
     <div class="bv-loading-card">
       <p style="color:#E74C3C;font-family:'Inter',sans-serif;font-size:14px;margin:0 0 8px">মডেল লোড ব্যর্থ হয়েছে</p>
       <p style="color:#7a8099;font-family:'Inter',sans-serif;font-size:12px;margin:0">
-        <code>assets/z-anatomy.glb</code> পাওয়া যাচ্ছে না।<br/>
+        <code>assets/models/z-anatomy.glb</code> পাওয়া যাচ্ছে না।<br/>
         Local server দিয়ে চালু করুন: <code>npx serve .</code>
       </p>
     </div>`;

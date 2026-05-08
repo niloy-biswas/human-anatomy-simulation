@@ -315,11 +315,11 @@ modelViewer.addEventListener("error", (event) => {
     <div class="loading-card">
       <p class="loading-text" style="color:#e63030">মডেল লোড ব্যর্থ হয়েছে</p>
       <p class="loading-sub">
-        assets/heart.glb পাওয়া যাচ্ছে না।<br/>
+        assets/models/heart.glb পাওয়া যাচ্ছে না।<br/>
         নিচের নির্দেশনা অনুসরণ করুন।
       </p>
       <ul style="text-align:left;margin-top:8px;color:#7a8099;font-size:12px;line-height:2">
-        <li>heart.glb ফাইলটি <strong>assets/</strong> ফোল্ডারে রাখুন</li>
+        <li>heart.glb ফাইলটি <strong>assets/models/</strong> ফোল্ডারে রাখুন</li>
         <li>Local server দিয়ে চালু করুন (<code>npx serve .</code>)</li>
         <li>ফাইলটি সরাসরি browser-এ খুলবেন না</li>
       </ul>
