@@ -1,7 +1,6 @@
 {
   "rewrites": [
-    { "source": "/",         "destination": "/body.html" },
-    { "source": "/heart",    "destination": "/index.html" },
+    { "source": "/heart",    "destination": "/heart.html" },
     { "source": "/body",     "destination": "/body.html" },
     { "source": "/skeletal", "destination": "/body.html" },
     { "source": "/joints",   "destination": "/body.html" },
@@ -11,6 +10,7 @@
     { "source": "/venous",   "destination": "/body.html" },
     { "source": "/lymphoid", "destination": "/body.html" },
     { "source": "/nervous",  "destination": "/body.html" },
-    { "source": "/visceral", "destination": "/body.html" }
+    { "source": "/visceral", "destination": "/body.html" },
+    { "source": "/",         "destination": "/body.html" }
   ]
 }

@@ -19,7 +19,11 @@ Interactive 3D anatomy viewer built for 10 Minute School. Heart viewer (`model-v
 | `/nervous` | Full body, Nervous System selected |
 | `/visceral` | Full body, Visceral Systems selected |
 
-Routes are handled by `vercel.json` rewrites in production and `serve.json` locally.
+Routes use `serve.json` locally. On Vercel, `vercel.json` sets `cleanUrls` (so `/body` not `/body.html`) plus rewrites for `/` and per-system paths.
+
+### `/heart` returns 404 locally
+
+You are probably running `serve --single` / `-s` (or another static server that has no `serve.json` rewrites). Use **`npx serve .` from the repo root** with **no** `--single` flag so `serve.json` applies.
 
 ## Run locally
 
@@ -56,7 +60,7 @@ Connect the repo in the Vercel dashboard, import as a static project (no build s
 ## File structure
 
 ```
-├── body.html / index.html      HTML pages (must stay at root for routing)
+├── body.html / heart.html      HTML pages (root has no `index.html` so `/` rewrite works on Vercel)
 ├── favicon.ico
 ├── serve.json / vercel.json
 ├── js/

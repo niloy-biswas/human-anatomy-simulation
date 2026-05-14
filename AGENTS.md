@@ -7,9 +7,9 @@ Quick context for agents: what's built, how it works, what to avoid.
 Educational 3D anatomy (Bangla + English) hosted on Vercel.
 
 **Pages:**
-- `/` → `body.html`: full-body Z-Anatomy viewer (Three.js)
-- `/heart` → `index.html`: heart-only viewer (`<model-viewer>`)
-- `/body`, `/skeletal`, `/muscular`, `/visceral`, etc. → `body.html`
+- `/` → rewrites to full-body viewer (Three.js); file on disk is `body.html`
+- `/heart` → `heart.html` (clean URL on Vercel via `cleanUrls`); do not use root `index.html` (it wins over `/` rewrites)
+- `/body`, `/skeletal`, `/muscular`, `/visceral`, etc. → same full-body app (`vercel.json`: `cleanUrls` + rewrites)
 
 ## How to run
 
@@ -21,6 +21,8 @@ npx --yes serve .
 - `http://localhost:3000/` → full body
 - `http://localhost:3000/heart` → heart
 
+**Do not use `serve --single` (`-s`).** That mode prepends a `**` → `/index.html` rewrite (SPA fallback). This repo has no root `index.html`, so `/heart` becomes **404**. Plain `serve .` reads `serve.json` and works.
+
 Routing via `serve.json` (local) and `vercel.json` (production).
 
 ## File map
@@ -28,7 +30,7 @@ Routing via `serve.json` (local) and `vercel.json` (production).
 | File | Role |
 |------|------|
 | `body.html` | Full-body viewer layout |
-| `index.html` | Heart viewer layout |
+| `heart.html` | Heart viewer layout |
 | `js/body.js` | Three.js viewer — all viewer logic |
 | `js/heart.js` | Heart viewer logic (classic script, no modules) |
 | `js/search.js` | Shared ES module — typeahead search UI, framework-agnostic |
@@ -40,7 +42,7 @@ Routing via `serve.json` (local) and `vercel.json` (production).
 
 ## Assets
 
-- `assets/models/heart.glb` (~16 MB): heart model for `index.html`
+- `assets/models/heart.glb` (~16 MB): heart model for `heart.html`
 - `assets/models/z-anatomy-draco.glb` (~23 MB): Draco-compressed Z-Anatomy, used by `body.html`
 - `assets/models/z-anatomy.glb` (~155 MB): raw export — **git-ignored**, local only
 - `assets/images/heart.png`: heart icon for sidebar organ card
