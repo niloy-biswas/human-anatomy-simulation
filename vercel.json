@@ -1,17 +1,16 @@
 {
+  "cleanUrls": true,
   "rewrites": [
-    { "source": "/",         "destination": "/body.html" },
-    { "source": "/heart",    "destination": "/index.html" },
-    { "source": "/body",     "destination": "/body.html" },
-    { "source": "/skeletal", "destination": "/body.html" },
-    { "source": "/joints",   "destination": "/body.html" },
-    { "source": "/muscular", "destination": "/body.html" },
-    { "source": "/fasciae",  "destination": "/body.html" },
-    { "source": "/arterial", "destination": "/body.html" },
-    { "source": "/venous",   "destination": "/body.html" },
-    { "source": "/lymphoid", "destination": "/body.html" },
-    { "source": "/nervous",  "destination": "/body.html" },
-    { "source": "/visceral", "destination": "/body.html" }
+    { "source": "/",         "destination": "/body" },
+    { "source": "/skeletal", "destination": "/body" },
+    { "source": "/joints",   "destination": "/body" },
+    { "source": "/muscular", "destination": "/body" },
+    { "source": "/fasciae",  "destination": "/body" },
+    { "source": "/arterial", "destination": "/body" },
+    { "source": "/venous",   "destination": "/body" },
+    { "source": "/lymphoid", "destination": "/body" },
+    { "source": "/nervous",  "destination": "/body" },
+    { "source": "/visceral", "destination": "/body" }
   ],
   "headers": [
     {

@@ -442,7 +442,10 @@ function onModelLoaded(gltf) {
   defaultCamPos.copy(camera.position);
 
   // URL-based system selection: /skeletal, /muscular, /visceral, etc.
-  const urlKey = window.location.pathname.replace(/^\//, '').toLowerCase();
+  const urlKey = window.location.pathname
+    .replace(/^\//, '')
+    .replace(/\.html$/i, '')
+    .toLowerCase();
   if (SYSTEMS.some(s => s.key === urlKey)) {
     SYSTEMS.forEach(s => { s.visible = (s.key === urlKey); });
     SYSTEMS.forEach(s => toggleSystem(s.key, s.visible));
